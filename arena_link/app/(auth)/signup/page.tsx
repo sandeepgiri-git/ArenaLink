@@ -1,67 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRightIcon } from "@/components/icons/SportIcons";
+import { registerUser, type SignupState } from "./actions";
+import { signIn } from "next-auth/react";
+
+const initialState: SignupState = {};
 
 export default function SignupPage() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [state, formAction, isPending] = useActionState(
+    registerUser,
+    initialState
+  );
+  const router = useRouter();
 
-  const validate = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = "Full name is required";
+  useEffect(() => {
+    if (state.success) {
+      router.push("/dashboard");
     }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
-    }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password";
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-
-    setIsLoading(true);
-    // TODO: Integrate with Auth.js / NextAuth v5
-    // Simulating API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error on change
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
+  }, [state.success, router]);
 
   return (
     <>
@@ -75,9 +34,17 @@ export default function SignupPage() {
         </p>
       </div>
 
+      {/* Server-side Error Message */}
+      {state.message && !state.success && (
+        <div className="mb-4 p-3 rounded-xl bg-[rgba(239,68,68,0.1)] border border-danger/20 text-danger text-sm">
+          {state.message}
+        </div>
+      )}
+
       {/* Google Sign Up */}
       <button
         type="button"
+        onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
         className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border bg-surface hover:bg-surface-hover transition-all duration-200 font-medium text-sm mb-6"
         id="signup-google"
       >
@@ -115,13 +82,10 @@ export default function SignupPage() {
       </div>
 
       {/* Signup Form */}
-      <form onSubmit={handleSubmit} className="space-y-4" id="signup-form">
+      <form action={formAction} className="space-y-4" id="signup-form">
         {/* Full Name */}
         <div>
-          <label
-            htmlFor="name"
-            className="block text-sm font-medium mb-1.5"
-          >
+          <label htmlFor="name" className="block text-sm font-medium mb-1.5">
             Full Name
           </label>
           <input
@@ -130,21 +94,19 @@ export default function SignupPage() {
             type="text"
             autoComplete="name"
             placeholder="Sandeep Giri"
-            value={formData.name}
-            onChange={handleChange}
-            className={`input-field ${errors.name ? "border-danger focus:border-danger focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)]" : ""}`}
+            required
+            className={`input-field ${state.errors?.name ? "border-danger focus:border-danger focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)]" : ""}`}
           />
-          {errors.name && (
-            <p className="text-danger text-xs mt-1.5">{errors.name}</p>
+          {state.errors?.name && (
+            <p className="text-danger text-xs mt-1.5">
+              {state.errors.name[0]}
+            </p>
           )}
         </div>
 
         {/* Email */}
         <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium mb-1.5"
-          >
+          <label htmlFor="email" className="block text-sm font-medium mb-1.5">
             Email Address
           </label>
           <input
@@ -153,12 +115,13 @@ export default function SignupPage() {
             type="email"
             autoComplete="email"
             placeholder="you@example.com"
-            value={formData.email}
-            onChange={handleChange}
-            className={`input-field ${errors.email ? "border-danger focus:border-danger focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)]" : ""}`}
+            required
+            className={`input-field ${state.errors?.email ? "border-danger focus:border-danger focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)]" : ""}`}
           />
-          {errors.email && (
-            <p className="text-danger text-xs mt-1.5">{errors.email}</p>
+          {state.errors?.email && (
+            <p className="text-danger text-xs mt-1.5">
+              {state.errors.email[0]}
+            </p>
           )}
         </div>
 
@@ -176,12 +139,13 @@ export default function SignupPage() {
             type="password"
             autoComplete="new-password"
             placeholder="At least 8 characters"
-            value={formData.password}
-            onChange={handleChange}
-            className={`input-field ${errors.password ? "border-danger focus:border-danger focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)]" : ""}`}
+            required
+            className={`input-field ${state.errors?.password ? "border-danger focus:border-danger focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)]" : ""}`}
           />
-          {errors.password && (
-            <p className="text-danger text-xs mt-1.5">{errors.password}</p>
+          {state.errors?.password && (
+            <p className="text-danger text-xs mt-1.5">
+              {state.errors.password[0]}
+            </p>
           )}
         </div>
 
@@ -199,13 +163,12 @@ export default function SignupPage() {
             type="password"
             autoComplete="new-password"
             placeholder="Re-enter your password"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            className={`input-field ${errors.confirmPassword ? "border-danger focus:border-danger focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)]" : ""}`}
+            required
+            className={`input-field ${state.errors?.confirmPassword ? "border-danger focus:border-danger focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)]" : ""}`}
           />
-          {errors.confirmPassword && (
+          {state.errors?.confirmPassword && (
             <p className="text-danger text-xs mt-1.5">
-              {errors.confirmPassword}
+              {state.errors.confirmPassword[0]}
             </p>
           )}
         </div>
@@ -213,11 +176,11 @@ export default function SignupPage() {
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isPending}
           className="btn-primary w-full py-3.5 text-base mt-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
           id="signup-submit"
         >
-          {isLoading ? (
+          {isPending ? (
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
               Creating account...
