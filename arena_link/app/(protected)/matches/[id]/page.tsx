@@ -261,10 +261,10 @@ export default async function MatchDetailsPage({
 
           {/* Host Requests Panel */}
           {isHost && (
-            <div className="sticky top-6 space-y-6">
+            <div className="md:sticky md:top-6 space-y-6 md:max-h-[calc(100vh-3rem)] md:overflow-y-auto no-scrollbar pb-6">
               <div className="glass-card p-6 border-primary/20">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                     </svg>
@@ -275,7 +275,7 @@ export default async function MatchDetailsPage({
                   </div>
                 </div>
                 
-                <div className="flex gap-2">
+                <div className="flex flex-col xl:flex-row gap-2">
                   <button className="flex-1 btn-secondary text-sm py-2">Edit Match</button>
                   <button className="flex-1 btn-secondary text-sm py-2 text-danger hover:bg-danger/10 hover:border-danger/20">Cancel Match</button>
                 </div>

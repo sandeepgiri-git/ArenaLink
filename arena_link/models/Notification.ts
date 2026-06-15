@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface INotification extends Document {
   userId: mongoose.Types.ObjectId; // The user receiving the notification
-  type: "join_request" | "request_accepted" | "request_rejected" | "match_cancelled" | "match_completed";
+  type: "join_request" | "request_accepted" | "request_rejected" | "match_cancelled" | "match_completed" | "friend_request" | "system";
   message: string;
   relatedMatchId?: mongoose.Types.ObjectId; // Optional, for deep linking
   relatedUserId?: mongoose.Types.ObjectId; // Optional, the user who triggered it
@@ -21,7 +21,7 @@ const NotificationSchema = new Schema<INotification>(
     },
     type: {
       type: String,
-      enum: ["join_request", "request_accepted", "request_rejected", "match_cancelled", "match_completed"],
+      enum: ["join_request", "request_accepted", "request_rejected", "match_cancelled", "match_completed", "friend_request", "system"],
       required: true,
     },
     message: {

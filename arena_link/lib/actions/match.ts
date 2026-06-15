@@ -257,3 +257,76 @@ export async function getMatchById(id: string): Promise<MatchDetailsData | null>
     return null;
   }
 }
+
+export async function getUserMatches(): Promise<{ upcoming: MatchDisplayData[], past: MatchDisplayData[], currentUserId: string | null }> {
+  try {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return { upcoming: [], past: [], currentUserId: null };
+
+    await connectDB();
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    const matches = await Match.find({
+      $or: [
+        { hostId: userObjectId },
+        { playersJoined: userObjectId }
+      ]
+    })
+      .sort({ date: -1, time: -1 })
+      .populate<{ hostId: IUser }>("hostId", "name image rating")
+      .lean()
+      .exec();
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const upcoming: MatchDisplayData[] = [];
+    const past: MatchDisplayData[] = [];
+
+    matches.forEach(match => {
+      const matchDate = new Date(match.date);
+      const isPast = matchDate < today;
+
+      const displayData: MatchDisplayData = {
+        id: match._id.toString(),
+        title: match.title,
+        sport: match.sport,
+        description: match.description || "",
+        date: match.date instanceof Date ? match.date.toISOString() : new Date(match.date).toISOString(),
+        time: match.time,
+        location: match.location,
+        playersNeeded: match.playersNeeded,
+        costPerPlayer: match.costPerPlayer,
+        skillLevelRequired: match.skillLevelRequired,
+        status: match.status,
+        playersJoinedCount: match.playersJoined?.length || 0,
+        host: {
+          id: match.hostId._id.toString(),
+          name: match.hostId.name,
+          image: match.hostId.image || "",
+          rating: match.hostId.rating || 0,
+        },
+      };
+
+      if (isPast) {
+        past.push(displayData);
+      } else {
+        upcoming.push(displayData);
+      }
+    });
+
+    // Upcoming should be sorted ascending (closest first)
+    upcoming.sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return dateA - dateB;
+    });
+
+    return { upcoming, past, currentUserId: userId };
+  } catch (error) {
+    console.error("Failed to fetch user matches:", error);
+    return { upcoming: [], past: [], currentUserId: null };
+  }
+}

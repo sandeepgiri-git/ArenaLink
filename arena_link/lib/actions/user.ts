@@ -56,6 +56,35 @@ export async function getUserProfile(): Promise<UserProfile | null> {
   }
 }
 
+export async function getPublicProfile(userId: string): Promise<UserProfile | null> {
+  try {
+    await connectDB();
+    const user = await User.findById(userId).lean<IUser>();
+    if (!user) return null;
+
+    return {
+      id: user._id.toString(),
+      name: user.name,
+      email: "", // Hide email for public profile
+      image: user.image || "",
+      username: user.username || "",
+      bio: user.bio || "",
+      city: user.city || "",
+      age: user.age || null,
+      gender: user.gender || "",
+      sportsInterests: user.sportsInterests || [],
+      skillLevel: user.skillLevel || "beginner",
+      matchesPlayed: user.matchesPlayed || 0,
+      rating: user.rating || 0,
+      reliabilityScore: user.reliabilityScore || 100,
+      createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error("Error fetching public profile:", error);
+    return null;
+  }
+}
+
 const profileSchema = z.object({
   name: z
     .string()

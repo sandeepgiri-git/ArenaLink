@@ -28,13 +28,13 @@ export default async function ProfilePage() {
       {/* Profile Header Card */}
       <div className="glass-card overflow-hidden">
         {/* Cover gradient */}
-        <div className="h-32 sm:h-40 bg-gradient-to-r from-primary via-accent to-secondary relative">
+        <div className="h-24 sm:h-32 bg-gradient-to-r from-primary via-accent to-secondary relative">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2cpIi8+PC9zdmc+')] opacity-50" />
         </div>
 
         <div className="px-6 sm:px-8 pb-6">
           {/* Avatar + Name */}
-          <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12 sm:-mt-14">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-10 sm:-mt-12 relative z-10">
             <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-surface border-4 border-surface shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0">
               {profile.image ? (
                 // eslint-disable-next-line @next/next/no-img-element

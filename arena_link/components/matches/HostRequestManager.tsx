@@ -53,8 +53,8 @@ export default function HostRequestManager({
       </div>
       <div className="divide-y divide-border">
         {requests.map((request) => (
-          <div key={request.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-surface-hover/50 transition-colors">
-            <div className="flex items-center gap-3 flex-1">
+          <div key={request.id} className="p-4 flex flex-col gap-4 hover:bg-surface-hover/50 transition-colors">
+            <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-surface border border-border overflow-hidden flex-shrink-0 flex items-center justify-center">
                 {request.user.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -81,23 +81,23 @@ export default function HostRequestManager({
             </div>
             
             {request.message && (
-              <p className="text-sm text-muted italic bg-surface p-2 rounded-lg sm:max-w-xs truncate">
+              <p className="text-sm text-muted italic bg-surface p-2 rounded-lg break-words">
                 "{request.message}"
               </p>
             )}
 
-            <div className="flex items-center gap-2 mt-2 sm:mt-0">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => handleUpdate(request.id, "rejected")}
                 disabled={processingId !== null}
-                className="flex-1 sm:flex-none btn-secondary text-sm py-2 px-4 hover:bg-danger/10 hover:text-danger hover:border-danger/20 disabled:opacity-50"
+                className="flex-1 btn-secondary text-sm py-2 px-4 hover:bg-danger/10 hover:text-danger hover:border-danger/20 disabled:opacity-50"
               >
                 Decline
               </button>
               <button
                 onClick={() => handleUpdate(request.id, "accepted")}
                 disabled={processingId !== null}
-                className="flex-1 sm:flex-none btn-primary text-sm py-2 px-4 disabled:opacity-50"
+                className="flex-1 btn-primary text-sm py-2 px-4 disabled:opacity-50"
               >
                 {processingId === request.id ? "Processing..." : "Accept"}
               </button>
