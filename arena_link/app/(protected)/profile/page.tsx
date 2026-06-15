@@ -1,4 +1,4 @@
-import { getUserProfile } from "@/lib/actions/user";
+import { getUserProfile, getUserStats } from "@/lib/actions/user";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -17,6 +17,8 @@ export default async function ProfilePage() {
   if (!profile) {
     redirect("/login");
   }
+
+  const userStats = await getUserStats(profile.id);
 
   const joinedDate = new Date(profile.createdAt).toLocaleDateString("en-US", {
     month: "long",
@@ -100,24 +102,30 @@ export default async function ProfilePage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="glass-card p-5 text-center">
           <p className="text-2xl font-bold text-primary">
-            {profile.matchesPlayed}
+            {userStats?.totalMatchesPlayed || 0}
           </p>
-          <p className="text-xs text-muted mt-1">Matches Played</p>
+          <p className="text-xs text-muted mt-1 uppercase font-bold tracking-wider">Matches</p>
         </div>
         <div className="glass-card p-5 text-center">
           <p className="text-2xl font-bold text-warning">
             {profile.rating > 0 ? `${profile.rating.toFixed(1)} ★` : "—"}
           </p>
-          <p className="text-xs text-muted mt-1">Rating</p>
+          <p className="text-xs text-muted mt-1 uppercase font-bold tracking-wider">Rating</p>
         </div>
         <div className="glass-card p-5 text-center">
           <p className="text-2xl font-bold text-success">
-            {profile.reliabilityScore}%
+            {userStats?.hostCount || 0}
           </p>
-          <p className="text-xs text-muted mt-1">Reliability</p>
+          <p className="text-xs text-muted mt-1 uppercase font-bold tracking-wider">Hosted</p>
+        </div>
+        <div className="glass-card p-5 text-center">
+          <p className="text-2xl font-bold text-accent capitalize">
+            {userStats?.mostPlayedSport || "None"}
+          </p>
+          <p className="text-xs text-muted mt-1 uppercase font-bold tracking-wider">Top Sport</p>
         </div>
       </div>
 

@@ -21,10 +21,28 @@ export default function middleware(req: NextRequest) {
     pathname.startsWith(route)
   );
 
-  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route)) || pathname === "/";
 
-  // Redirect unauthenticated users from protected routes to login
+  // Known social media scraper user agents
+  const botUserAgents = [
+    "facebookexternalhit",
+    "twitterbot",
+    "whatsapp",
+    "linkedinbot",
+    "skypeuripreview",
+    "telegrambot",
+    "discordbot"
+  ];
+  const userAgent = req.headers.get("user-agent")?.toLowerCase() || "";
+  const isBot = botUserAgents.some(bot => userAgent.includes(bot));
+
+  // If it's a protected route and not logged in
   if (isProtectedRoute && !isLoggedIn) {
+    // BYPASS: If a bot is trying to access a match page for Open Graph tags, allow it
+    if (isBot && pathname.startsWith("/matches/")) {
+      return NextResponse.next();
+    }
+
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);

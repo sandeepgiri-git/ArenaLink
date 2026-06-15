@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowRightIcon } from "@/components/icons/SportIcons";
 import { loginUser, type LoginState } from "./actions";
@@ -15,12 +15,18 @@ export default function LoginPage() {
     initialState
   );
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlMessage = searchParams.get("message");
 
   useEffect(() => {
     if (state.success) {
-      router.push("/dashboard");
+      if (state.requiresVerification && state.email) {
+        router.push(`/verify-email?email=${encodeURIComponent(state.email)}`);
+      } else {
+        router.push(searchParams.get("callbackUrl") || "/dashboard");
+      }
     }
-  }, [state.success, router]);
+  }, [state.success, state.requiresVerification, state.email, router, searchParams]);
 
   return (
     <>
@@ -36,8 +42,15 @@ export default function LoginPage() {
 
       {/* Server-side Error Message */}
       {state.message && !state.success && (
-        <div className="mb-4 p-3 rounded-xl bg-[rgba(239,68,68,0.1)] border border-danger/20 text-danger text-sm">
+        <div className="mb-4 p-3 rounded-xl bg-[rgba(239,68,68,0.1)] border border-danger/20 text-danger text-sm text-center">
           {state.message}
+        </div>
+      )}
+
+      {/* URL Success Message */}
+      {urlMessage && !state.message && (
+        <div className="mb-4 p-3 rounded-xl bg-success/10 border border-success/20 text-success text-sm text-center">
+          {urlMessage}
         </div>
       )}
 

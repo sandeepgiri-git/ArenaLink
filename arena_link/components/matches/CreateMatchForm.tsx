@@ -4,6 +4,12 @@ import { useActionState, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createMatch, type MatchCreateState } from "@/lib/actions/match";
+import dynamic from "next/dynamic";
+
+const LocationPickerMap = dynamic(() => import("./LocationPickerMap"), {
+  ssr: false,
+  loading: () => <div className="h-64 bg-surface-hover rounded-xl animate-pulse flex items-center justify-center text-muted text-sm">Loading map...</div>,
+});
 
 const SPORTS = [
   { id: "football", label: "Football", emoji: "⚽" },
@@ -214,39 +220,57 @@ export default function CreateMatchForm() {
           </div>
 
           {/* Location */}
-          <div className="mt-4">
-            <label htmlFor="location" className="block text-sm font-medium mb-1.5">
-              Location <span className="text-danger">*</span>
-            </label>
-            <div className="flex gap-2 items-start">
-              <div className="flex-1">
-                <input
-                  id="location"
-                  name="location"
-                  type="text"
-                  required
-                  ref={locationRef}
-                  className={`input-field ${state.errors?.location ? "border-danger" : ""}`}
-                  placeholder="e.g., Central Park, Court 2"
-                />
-                {state.errors?.location && (
-                  <p className="text-danger text-xs mt-1">{state.errors.location[0]}</p>
-                )}
+          <div className="mt-4 space-y-4">
+            <div>
+              <label htmlFor="location" className="block text-sm font-medium mb-1.5">
+                Venue Name / Address <span className="text-danger">*</span>
+              </label>
+              <div className="flex gap-2 items-start">
+                <div className="flex-1">
+                  <input
+                    id="location"
+                    name="location"
+                    type="text"
+                    required
+                    ref={locationRef}
+                    className={`input-field ${state.errors?.location ? "border-danger" : ""}`}
+                    placeholder="e.g., Central Park, Court 2"
+                  />
+                  {state.errors?.location && (
+                    <p className="text-danger text-xs mt-1">{state.errors.location[0]}</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleGetCoordinates}
+                  disabled={isGeocoding}
+                  className="btn-secondary whitespace-nowrap text-sm py-2.5 px-4 h-11 disabled:opacity-50"
+                  title="Search Map"
+                >
+                  {isGeocoding ? "Searching..." : "🔍 Search Map"}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={handleGetCoordinates}
-                disabled={isGeocoding}
-                className="btn-secondary whitespace-nowrap text-sm py-2.5 px-4 h-11 disabled:opacity-50"
-                title="Get Coordinates"
-              >
-                {isGeocoding ? "Finding..." : lat && lng ? "✓ Verified" : "📍 Verify Map Location"}
-              </button>
+              {geocodeError && <p className="text-warning text-xs mt-1">{geocodeError}</p>}
             </div>
-            {geocodeError && <p className="text-warning text-xs mt-1">{geocodeError}</p>}
-            {lat && lng && !geocodeError && (
-              <p className="text-success text-xs mt-1">Coordinates found successfully!</p>
-            )}
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                Pinpoint on Map (Optional but recommended)
+              </label>
+              <p className="text-xs text-muted mb-2">Click on the map to drop a pin. This helps players navigate exactly to your match!</p>
+              <LocationPickerMap 
+                onLocationSelect={(newLat, newLng) => {
+                  setLat(newLat);
+                  setLng(newLng);
+                  setGeocodeError("");
+                }} 
+                defaultLat={lat || undefined} 
+                defaultLng={lng || undefined} 
+              />
+              {lat && lng && !geocodeError && (
+                <p className="text-success text-xs mt-2">📍 Coordinates selected successfully!</p>
+              )}
+            </div>
           </div>
         </div>
 

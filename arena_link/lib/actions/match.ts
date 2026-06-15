@@ -3,6 +3,7 @@
 import connectDB from "@/lib/db";
 import Match, { type IMatch } from "@/models/Match";
 import User, { type IUser } from "@/models/User";
+import Notification from "@/models/Notification";
 import { auth } from "@/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
@@ -22,6 +23,7 @@ export type MatchDisplayData = {
   status: string;
   playersJoinedCount: number;
   distanceInKm?: number;
+  coordinates?: [number, number];
   host: {
     id: string;
     name: string;
@@ -189,6 +191,7 @@ export async function getMatches(userLat?: number, userLng?: number): Promise<Ma
       status: match.status,
       playersJoinedCount: match.playersJoined?.length || 0,
       distanceInKm: match.distance !== undefined ? Number(match.distance.toFixed(1)) : undefined,
+      coordinates: match.locationCoordinates?.coordinates || undefined,
       host: {
         id: match.hostId._id.toString(),
         name: match.hostId.name,
@@ -239,6 +242,7 @@ export async function getMatchById(id: string): Promise<MatchDetailsData | null>
       skillLevelRequired: match.skillLevelRequired,
       status: match.status,
       playersJoinedCount: match.playersJoined?.length || 0,
+      coordinates: match.locationCoordinates?.coordinates || undefined,
       host: {
         id: match.hostId._id.toString(),
         name: match.hostId.name,
@@ -302,6 +306,7 @@ export async function getUserMatches(): Promise<{ upcoming: MatchDisplayData[], 
         skillLevelRequired: match.skillLevelRequired,
         status: match.status,
         playersJoinedCount: match.playersJoined?.length || 0,
+        coordinates: match.locationCoordinates?.coordinates || undefined,
         host: {
           id: match.hostId._id.toString(),
           name: match.hostId.name,
@@ -328,5 +333,107 @@ export async function getUserMatches(): Promise<{ upcoming: MatchDisplayData[], 
   } catch (error) {
     console.error("Failed to fetch user matches:", error);
     return { upcoming: [], past: [], currentUserId: null };
+  }
+}
+
+export async function getHostedOpenMatches(): Promise<MatchDisplayData[]> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return [];
+
+    await connectDB();
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const matches = await Match.find({
+      hostId: session.user.id,
+      status: "open",
+      date: { $gte: today }
+    })
+      .sort({ date: 1, time: 1 })
+      .populate<{ hostId: IUser }>("hostId", "name image rating")
+      .lean()
+      .exec();
+
+    return matches.map((match: any) => ({
+      id: match._id.toString(),
+      title: match.title,
+      sport: match.sport,
+      description: match.description || "",
+      date: match.date instanceof Date ? match.date.toISOString() : new Date(match.date).toISOString(),
+      time: match.time,
+      location: match.location,
+      playersNeeded: match.playersNeeded,
+      costPerPlayer: match.costPerPlayer,
+      skillLevelRequired: match.skillLevelRequired,
+      status: match.status,
+      playersJoinedCount: match.playersJoined?.length || 0,
+      host: {
+        id: match.hostId._id.toString(),
+        name: match.hostId.name,
+        image: match.hostId.image || "",
+        rating: match.hostId.rating || 0,
+      },
+    }));
+  } catch (error) {
+    console.error("Failed to fetch hosted matches:", error);
+    return [];
+  }
+}
+
+export async function inviteUserToMatch(matchId: string, targetUserId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, message: "Unauthorized." };
+    }
+
+    await connectDB();
+
+    if (!mongoose.Types.ObjectId.isValid(matchId) || !mongoose.Types.ObjectId.isValid(targetUserId)) {
+      return { success: false, message: "Invalid IDs." };
+    }
+
+    const match = await Match.findById(matchId);
+    if (!match) {
+      return { success: false, message: "Match not found." };
+    }
+
+    if (match.hostId.toString() !== session.user.id) {
+      return { success: false, message: "Only the host can invite players." };
+    }
+
+    if (match.status !== "open") {
+      return { success: false, message: "This match is no longer open." };
+    }
+
+    if (match.playersJoined.includes(new mongoose.Types.ObjectId(targetUserId))) {
+      return { success: false, message: "Player is already in this match." };
+    }
+
+    // Check if notification already sent
+    const existingInvite = await Notification.findOne({
+      userId: targetUserId,
+      type: "match_invite",
+      relatedMatchId: matchId,
+    });
+
+    if (existingInvite) {
+      return { success: false, message: "You already invited this player to this match." };
+    }
+
+    await Notification.create({
+      userId: targetUserId,
+      type: "match_invite",
+      message: `${session.user.name || "A host"} invited you to join their match: ${match.title}`,
+      relatedMatchId: matchId,
+      relatedUserId: session.user.id,
+    });
+
+    return { success: true, message: "Invitation sent!" };
+  } catch (error) {
+    console.error("Failed to send invite:", error);
+    return { success: false, message: "An error occurred." };
   }
 }

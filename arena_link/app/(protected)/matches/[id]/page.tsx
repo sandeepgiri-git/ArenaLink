@@ -7,6 +7,8 @@ import HostRequestManager from "@/components/matches/HostRequestManager";
 import JoinMatchButton from "@/components/matches/JoinMatchButton";
 import MatchChat from "@/components/matches/MatchChat";
 import { getMatchMessages } from "@/lib/actions/chat";
+import StaticLocationMapWrapper from "@/components/matches/StaticLocationMapWrapper";
+import { Metadata } from "next";
 
 const SPORT_EMOJIS: Record<string, string> = {
   football: "⚽",
@@ -16,6 +18,37 @@ const SPORT_EMOJIS: Record<string, string> = {
   tennis: "🎾",
   badminton: "🏸",
 };
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const match = await getMatchById(id);
+
+  if (!match) {
+    return { title: "Match Not Found - ArenaLink" };
+  }
+
+  const matchDate = new Date(match.date).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+
+  return {
+    title: `${match.title} | ArenaLink`,
+    description: `Join ${match.host.name}'s ${match.sport} match on ${matchDate} at ${match.time}. ${match.playersNeeded - match.playersJoinedCount} spots left!`,
+    openGraph: {
+      title: `⚽ ${match.title}`,
+      description: `Join ${match.host.name}'s ${match.sport} match on ${matchDate} at ${match.time}. ${match.playersNeeded - match.playersJoinedCount} spots left!`,
+      type: "website",
+      siteName: "ArenaLink",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${match.title} | ArenaLink`,
+      description: `Join ${match.host.name}'s ${match.sport} match on ${matchDate} at ${match.time}.`,
+    },
+  };
+}
 
 export default async function MatchDetailsPage({
   params,
@@ -131,14 +164,35 @@ export default async function MatchDetailsPage({
               </div>
             </div>
 
-            <div className="glass-card p-5 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-lg flex-shrink-0">
-                📍
+            <div className="glass-card p-5 flex flex-col gap-4 sm:col-span-2 md:col-span-1 lg:col-span-2">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-lg flex-shrink-0">
+                  📍
+                </div>
+                <div>
+                  <p className="text-sm text-muted mb-1">Location</p>
+                  <p className="font-medium">{match.location}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted mb-1">Location</p>
-                <p className="font-medium line-clamp-2">{match.location}</p>
-              </div>
+              
+              {match.coordinates && match.coordinates.length === 2 && (
+                <div className="mt-2 w-full">
+                  <StaticLocationMapWrapper lat={match.coordinates[1]} lng={match.coordinates[0]} />
+                  <a 
+                    href={`https://www.google.com/maps/search/?api=1&query=${match.coordinates[1]},${match.coordinates[0]}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 flex items-center justify-center gap-2 w-full btn-secondary py-2.5 text-sm font-medium hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-colors"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+                      <line x1="9" y1="3" x2="9" y2="21"></line>
+                      <line x1="15" y1="3" x2="15" y2="21"></line>
+                    </svg>
+                    Open in Google Maps
+                  </a>
+                </div>
+              )}
             </div>
 
             <div className="glass-card p-5 flex items-start gap-3">

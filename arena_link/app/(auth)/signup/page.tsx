@@ -18,9 +18,13 @@ export default function SignupPage() {
 
   useEffect(() => {
     if (state.success) {
-      router.push("/dashboard");
+      if (state.requiresVerification && state.email) {
+        router.push(`/verify-email?email=${encodeURIComponent(state.email)}`);
+      } else {
+        router.push("/dashboard");
+      }
     }
-  }, [state.success, router]);
+  }, [state.success, state.requiresVerification, state.email, router]);
 
   return (
     <>

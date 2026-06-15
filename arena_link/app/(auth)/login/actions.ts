@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
+import { generateAndSendOTP } from "@/lib/actions/verification";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email").trim().toLowerCase(),
@@ -13,6 +14,8 @@ export type LoginState = {
   errors?: Record<string, string[]>;
   message?: string;
   success?: boolean;
+  requiresVerification?: boolean;
+  email?: string;
 };
 
 export async function loginUser(
@@ -42,8 +45,22 @@ export async function loginUser(
     });
 
     return { success: true, message: "Logged in successfully!" };
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof AuthError) {
+      const isVerificationError = 
+        error.message?.includes("verification_required") || 
+        error.cause?.err?.message === "verification_required";
+
+      if (isVerificationError) {
+        // Generate and send a new OTP
+        await generateAndSendOTP(email, "Player");
+        return {
+          requiresVerification: true,
+          email,
+          success: true, // we don't want to show a red error, we just want to redirect
+        };
+      }
+
       switch (error.type) {
         case "CredentialsSignin":
           return {

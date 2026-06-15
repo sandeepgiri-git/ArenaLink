@@ -4,8 +4,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
-import { signIn } from "@/auth";
-import { AuthError } from "next-auth";
+import { generateAndSendOTP } from "@/lib/actions/verification";
 
 const signupSchema = z
   .object({
@@ -30,6 +29,8 @@ export type SignupState = {
   errors?: Record<string, string[]>;
   message?: string;
   success?: boolean;
+  requiresVerification?: boolean;
+  email?: string;
 };
 
 export async function registerUser(
@@ -69,29 +70,33 @@ export async function registerUser(
     // 4. Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // 5. Create user
+    // 5. Create user (emailVerified will be null by default based on schema, but let's be explicit)
     await User.create({
       name,
       email,
       password: hashedPassword,
+      emailVerified: null,
     });
 
-    // 6. Sign in the user
-    await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    // 6. Generate and send OTP
+    const otpResult = await generateAndSendOTP(email, name);
 
-    return { success: true, message: "Account created successfully!" };
-  } catch (error) {
-    if (error instanceof AuthError) {
+    if (!otpResult.success) {
       return {
-        message: "Account created but auto-login failed. Please log in manually.",
-        success: true,
+        message: "Account created but failed to send verification email.",
+        success: true, // It did create the account, so technically a success, they can request another OTP
+        requiresVerification: true,
+        email,
       };
     }
 
+    return { 
+      success: true, 
+      requiresVerification: true,
+      email,
+      message: "Please check your email to verify your account." 
+    };
+  } catch (error) {
     console.error("Registration error:", error);
     return {
       message: "Something went wrong. Please try again.",

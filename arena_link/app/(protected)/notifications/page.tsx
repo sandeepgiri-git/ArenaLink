@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUserNotifications, markNotificationAsRead, markAllNotificationsAsRead, type NotificationDisplay } from "@/lib/actions/notification";
+import { getUserNotifications, markNotificationAsRead, markAllNotificationsAsRead, type NotificationDisplayData } from "@/lib/actions/notification";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<NotificationDisplay[]>([]);
+  const [notifications, setNotifications] = useState<NotificationDisplayData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
@@ -19,7 +19,7 @@ export default function NotificationsPage() {
     fetchNotifs();
   }, []);
 
-  const handleNotificationClick = async (notif: NotificationDisplay) => {
+  const handleNotificationClick = async (notif: NotificationDisplayData) => {
     if (!notif.isRead) {
       await markNotificationAsRead(notif.id);
       setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));

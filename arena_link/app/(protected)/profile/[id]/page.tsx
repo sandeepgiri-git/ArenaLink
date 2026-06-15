@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { use } from "react";
-import { getPublicProfile } from "@/lib/actions/user";
+import { getPublicProfile, getUserStats } from "@/lib/actions/user";
 import { 
   getFriendshipStatus, 
   sendFriendRequest, 
@@ -12,6 +12,7 @@ import {
 } from "@/lib/actions/friend";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import InviteToMatchModal from "@/components/profile/InviteToMatchModal";
 
 export default function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -20,16 +21,22 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
 
   const [profile, setProfile] = useState<any>(null);
   const [friendStatus, setFriendStatus] = useState<any>({ status: "loading" });
+  const [userStats, setUserStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       const p = await getPublicProfile(targetUserId);
       if (p) {
         setProfile(p);
-        const fStatus = await getFriendshipStatus(targetUserId);
+        const [fStatus, stats] = await Promise.all([
+          getFriendshipStatus(targetUserId),
+          getUserStats(targetUserId)
+        ]);
         setFriendStatus(fStatus);
+        setUserStats(stats);
       }
       setIsLoading(false);
     };
@@ -148,6 +155,20 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
                     {actionLoading ? "..." : "Add Friend"}
                   </button>
                 )}
+
+                {/* Invite to Match Button */}
+                <button 
+                  onClick={() => setShowInviteModal(true)} 
+                  className="btn-secondary py-2 px-4 shadow-sm"
+                  title="Invite to Match"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <line x1="19" y1="8" x2="19" y2="14" />
+                    <line x1="22" y1="11" x2="16" y2="11" />
+                  </svg>
+                </button>
               </div>
             )}
             
@@ -170,7 +191,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
       {/* Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
         <div className="glass-card p-5 text-center">
-          <p className="text-2xl font-bold text-primary">{profile.matchesPlayed}</p>
+          <p className="text-2xl font-bold text-primary">{userStats?.totalMatchesPlayed || 0}</p>
           <p className="text-xs text-muted mt-1 uppercase font-bold tracking-wider">Matches</p>
         </div>
         <div className="glass-card p-5 text-center">
@@ -180,14 +201,14 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
           <p className="text-xs text-muted mt-1 uppercase font-bold tracking-wider">Rating</p>
         </div>
         <div className="glass-card p-5 text-center">
-          <p className="text-2xl font-bold text-success">{profile.reliabilityScore}%</p>
-          <p className="text-xs text-muted mt-1 uppercase font-bold tracking-wider">Reliability</p>
+          <p className="text-2xl font-bold text-success">{userStats?.hostCount || 0}</p>
+          <p className="text-xs text-muted mt-1 uppercase font-bold tracking-wider">Hosted</p>
         </div>
         <div className="glass-card p-5 text-center">
-          <p className="text-2xl font-bold text-accent">
-            {profile.sportsInterests?.length || 0}
+          <p className="text-2xl font-bold text-accent capitalize">
+            {userStats?.mostPlayedSport || "None"}
           </p>
-          <p className="text-xs text-muted mt-1 uppercase font-bold tracking-wider">Sports</p>
+          <p className="text-xs text-muted mt-1 uppercase font-bold tracking-wider">Top Sport</p>
         </div>
       </div>
 
@@ -235,6 +256,13 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
+      {showInviteModal && (
+        <InviteToMatchModal 
+          targetUserId={targetUserId}
+          targetUserName={profile.name}
+          onClose={() => setShowInviteModal(false)}
+        />
+      )}
     </div>
   );
 }

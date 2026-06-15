@@ -3,40 +3,39 @@
 import connectDB from "@/lib/db";
 import Notification from "@/models/Notification";
 import { auth } from "@/auth";
-import mongoose from "mongoose";
 import { revalidatePath } from "next/cache";
 
-export type NotificationDisplay = {
+export type NotificationDisplayData = {
   id: string;
   type: string;
   message: string;
-  relatedMatchId?: string;
-  relatedUserId?: string;
   isRead: boolean;
   createdAt: string;
+  relatedMatchId?: string;
+  relatedUserId?: string;
 };
 
-export async function getUserNotifications(): Promise<NotificationDisplay[]> {
+export async function getUserNotifications(): Promise<NotificationDisplayData[]> {
   try {
     const session = await auth();
-    const userId = session?.user?.id;
-    if (!userId) return [];
+    if (!session?.user?.id) return [];
 
     await connectDB();
 
-    const notifications = await Notification.find({ userId })
+    const notifications = await Notification.find({ userId: session.user.id })
       .sort({ createdAt: -1 })
+      .limit(50)
       .lean()
       .exec();
 
-    return notifications.map((notif: any) => ({
-      id: notif._id.toString(),
-      type: notif.type,
-      message: notif.message,
-      relatedMatchId: notif.relatedMatchId?.toString(),
-      relatedUserId: notif.relatedUserId?.toString(),
-      isRead: notif.isRead,
-      createdAt: notif.createdAt.toISOString(),
+    return notifications.map((n: any) => ({
+      id: n._id.toString(),
+      type: n.type,
+      message: n.message,
+      isRead: n.isRead,
+      createdAt: n.createdAt.toISOString(),
+      relatedMatchId: n.relatedMatchId?.toString(),
+      relatedUserId: n.relatedUserId?.toString(),
     }));
   } catch (error) {
     console.error("Failed to fetch notifications:", error);
@@ -47,64 +46,53 @@ export async function getUserNotifications(): Promise<NotificationDisplay[]> {
 export async function getUnreadNotificationCount(): Promise<number> {
   try {
     const session = await auth();
-    const userId = session?.user?.id;
-    if (!userId) return 0;
+    if (!session?.user?.id) return 0;
 
     await connectDB();
 
-    const count = await Notification.countDocuments({ userId, isRead: false });
-    return count;
+    return await Notification.countDocuments({ userId: session.user.id, isRead: false });
   } catch (error) {
-    console.error("Failed to fetch unread count:", error);
+    console.error("Failed to get unread notification count:", error);
     return 0;
   }
 }
 
-export async function markNotificationAsRead(notificationId: string) {
+export async function markNotificationAsRead(id: string) {
   try {
     const session = await auth();
-    const userId = session?.user?.id;
-    if (!userId) return { success: false, message: "Unauthorized." };
+    if (!session?.user?.id) return { success: false };
 
     await connectDB();
 
-    if (!mongoose.Types.ObjectId.isValid(notificationId)) {
-      return { success: false, message: "Invalid ID." };
-    }
-
-    const result = await Notification.updateOne(
-      { _id: notificationId, userId },
+    await Notification.findOneAndUpdate(
+      { _id: id, userId: session.user.id },
       { $set: { isRead: true } }
     );
 
-    if (result.modifiedCount > 0) {
-      revalidatePath("/notifications");
-    }
-
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (error) {
     console.error("Failed to mark notification as read:", error);
-    return { success: false, message: "An error occurred." };
+    return { success: false };
   }
 }
 
 export async function markAllNotificationsAsRead() {
   try {
     const session = await auth();
-    const userId = session?.user?.id;
-    if (!userId) return { success: false, message: "Unauthorized." };
+    if (!session?.user?.id) return { success: false };
 
     await connectDB();
 
     await Notification.updateMany(
-      { userId, isRead: false },
+      { userId: session.user.id, isRead: false },
       { $set: { isRead: true } }
     );
 
-    revalidatePath("/notifications");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (error) {
-    console.error("Failed to mark all as read:", error);
-    return { success: false, message: "An error occurred." };
+    console.error("Failed to mark all notifications as read:", error);
+    return { success: false };
   }
 }

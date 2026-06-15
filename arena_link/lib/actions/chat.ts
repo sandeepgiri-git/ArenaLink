@@ -3,6 +3,7 @@
 import connectDB from "@/lib/db";
 import Message from "@/models/Message";
 import Match from "@/models/Match";
+import Notification from "@/models/Notification";
 import { auth } from "@/auth";
 import mongoose from "mongoose";
 import { revalidatePath } from "next/cache";
@@ -74,6 +75,26 @@ export async function sendMessage(matchId: string, text: string) {
       text: text.trim().substring(0, 1000),
       expiresAt,
     });
+
+    // Notify all other participants
+    const otherParticipants = [match.hostId, ...match.playersJoined].filter(
+      (pid) => pid.toString() !== userId
+    );
+
+    // Deduplicate array (though host should not be in playersJoined)
+    const uniqueParticipants = [...new Set(otherParticipants.map(id => id.toString()))];
+
+    const notifications = uniqueParticipants.map(pid => ({
+      userId: new mongoose.Types.ObjectId(pid),
+      type: "new_message",
+      message: `New message in ${match.title}`,
+      relatedMatchId: match._id,
+      relatedUserId: new mongoose.Types.ObjectId(userId),
+    }));
+
+    if (notifications.length > 0) {
+      await Notification.insertMany(notifications);
+    }
 
     revalidatePath(`/matches/${matchId}`);
     return { success: true, message: "Message sent." };

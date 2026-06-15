@@ -5,6 +5,8 @@ import User, { type IUser } from "@/models/User";
 import { auth } from "@/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import Match from "@/models/Match";
+import mongoose from "mongoose";
 
 export type UserProfile = {
   id: string;
@@ -82,6 +84,55 @@ export async function getPublicProfile(userId: string): Promise<UserProfile | nu
   } catch (error) {
     console.error("Error fetching public profile:", error);
     return null;
+  }
+}
+
+export type UserStats = {
+  totalMatchesPlayed: number;
+  mostPlayedSport: string | null;
+  hostCount: number;
+};
+
+export async function getUserStats(userId: string): Promise<UserStats> {
+  try {
+    await connectDB();
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return { totalMatchesPlayed: 0, mostPlayedSport: null, hostCount: 0 };
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const today = new Date();
+
+    // Find all matches the user has participated in (host or player) that are in the past
+    const matches = await Match.find({
+      $or: [{ hostId: userObjectId }, { playersJoined: userObjectId }],
+      date: { $lt: today }
+    }).lean().exec();
+
+    let totalMatchesPlayed = matches.length;
+    let hostCount = 0;
+    const sportCounts: Record<string, number> = {};
+
+    matches.forEach(m => {
+      if (m.hostId.toString() === userId) {
+        hostCount++;
+      }
+      sportCounts[m.sport] = (sportCounts[m.sport] || 0) + 1;
+    });
+
+    let mostPlayedSport = null;
+    let maxCount = 0;
+    for (const [sport, count] of Object.entries(sportCounts)) {
+      if (count > maxCount) {
+        maxCount = count;
+        mostPlayedSport = sport;
+      }
+    }
+
+    return { totalMatchesPlayed, mostPlayedSport, hostCount };
+  } catch (error) {
+    console.error("Error getting user stats:", error);
+    return { totalMatchesPlayed: 0, mostPlayedSport: null, hostCount: 0 };
   }
 }
 
