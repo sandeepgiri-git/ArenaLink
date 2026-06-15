@@ -74,9 +74,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           if (!existingUser) {
             await User.create({
-              name: user.name,
-              email: user.email,
-              image: user.image,
+              name: user.name || "Unknown User",
+              email: user.email || "",
+              image: user.image || "",
               emailVerified: new Date(),
             });
           } else if (!existingUser.image && user.image) {
@@ -91,19 +91,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return true;
     },
     async jwt({ token, user }) {
+      // The `user` object is only available on initial sign in.
       if (user) {
-        token.id = user.id;
-      }
-
-      if (token.email && !token.id) {
         try {
           await connectDB();
-          const dbUser = await User.findOne({ email: token.email });
-          if (dbUser) {
-            token.id = dbUser._id.toString();
+          if (token.email) {
+            const dbUser = await User.findOne({ email: token.email });
+            if (dbUser) {
+              token.id = dbUser._id.toString();
+            } else {
+              token.id = user.id;
+            }
+          } else {
+            token.id = user.id;
           }
         } catch {
-          // Silently fail
+          token.id = user.id;
         }
       }
 

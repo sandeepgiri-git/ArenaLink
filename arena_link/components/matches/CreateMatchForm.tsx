@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createMatch, type MatchCreateState } from "@/lib/actions/match";
@@ -26,6 +26,11 @@ const initialState: MatchCreateState = {};
 export default function CreateMatchForm() {
   const [state, formAction, isPending] = useActionState(createMatch, initialState);
   const router = useRouter();
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [geocodeError, setGeocodeError] = useState("");
+  const locationRef = useRef<HTMLInputElement>(null);
 
   // Get tomorrow's date for default minimum date
   const tomorrow = new Date();
@@ -37,6 +42,35 @@ export default function CreateMatchForm() {
       router.push("/matches");
     }
   }, [state.success, router]);
+
+  const handleGetCoordinates = async () => {
+    setGeocodeError("");
+    setLat(null);
+    setLng(null);
+    const address = locationRef.current?.value;
+    if (!address) {
+      setGeocodeError("Please enter a location first.");
+      return;
+    }
+
+    setIsGeocoding(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
+      );
+      const data = await response.json();
+      if (data && data.length > 0) {
+        setLat(parseFloat(data[0].lat));
+        setLng(parseFloat(data[0].lon));
+      } else {
+        setGeocodeError("Could not find coordinates for this location.");
+      }
+    } catch (error) {
+      setGeocodeError("Error fetching location data.");
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto animate-fade-in-up pb-8">
@@ -61,6 +95,8 @@ export default function CreateMatchForm() {
       )}
 
       <form action={formAction} className="space-y-8">
+        <input type="hidden" name="lat" value={lat || ""} />
+        <input type="hidden" name="lng" value={lng || ""} />
         
         {/* Section 1: Basic Details */}
         <div className="glass-card p-6">
@@ -182,16 +218,34 @@ export default function CreateMatchForm() {
             <label htmlFor="location" className="block text-sm font-medium mb-1.5">
               Location <span className="text-danger">*</span>
             </label>
-            <input
-              id="location"
-              name="location"
-              type="text"
-              required
-              className={`input-field ${state.errors?.location ? "border-danger" : ""}`}
-              placeholder="e.g., Central Park, Court 2"
-            />
-            {state.errors?.location && (
-              <p className="text-danger text-xs mt-1">{state.errors.location[0]}</p>
+            <div className="flex gap-2 items-start">
+              <div className="flex-1">
+                <input
+                  id="location"
+                  name="location"
+                  type="text"
+                  required
+                  ref={locationRef}
+                  className={`input-field ${state.errors?.location ? "border-danger" : ""}`}
+                  placeholder="e.g., Central Park, Court 2"
+                />
+                {state.errors?.location && (
+                  <p className="text-danger text-xs mt-1">{state.errors.location[0]}</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={handleGetCoordinates}
+                disabled={isGeocoding}
+                className="btn-secondary whitespace-nowrap text-sm py-2.5 px-4 h-11 disabled:opacity-50"
+                title="Get Coordinates"
+              >
+                {isGeocoding ? "Finding..." : lat && lng ? "✓ Verified" : "📍 Verify Map Location"}
+              </button>
+            </div>
+            {geocodeError && <p className="text-warning text-xs mt-1">{geocodeError}</p>}
+            {lat && lng && !geocodeError && (
+              <p className="text-success text-xs mt-1">Coordinates found successfully!</p>
             )}
           </div>
         </div>

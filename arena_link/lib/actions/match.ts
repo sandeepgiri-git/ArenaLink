@@ -21,6 +21,7 @@ export type MatchDisplayData = {
   skillLevelRequired: string;
   status: string;
   playersJoinedCount: number;
+  distanceInKm?: number;
   host: {
     id: string;
     name: string;
@@ -45,6 +46,8 @@ const createMatchSchema = z.object({
   playersNeeded: z.coerce.number().min(1, "Need at least 1 player"),
   costPerPlayer: z.coerce.number().min(0, "Cost cannot be negative").default(0),
   skillLevelRequired: z.enum(["any", "beginner", "intermediate", "advanced", "pro"]).default("any"),
+  lat: z.coerce.number().optional(),
+  lng: z.coerce.number().optional(),
 });
 
 export async function createMatch(
@@ -66,6 +69,8 @@ export async function createMatch(
     playersNeeded: formData.get("playersNeeded"),
     costPerPlayer: formData.get("costPerPlayer"),
     skillLevelRequired: formData.get("skillLevelRequired"),
+    lat: formData.get("lat") || undefined,
+    lng: formData.get("lng") || undefined,
   };
 
   const validatedFields = createMatchSchema.safeParse(raw);
@@ -94,13 +99,22 @@ export async function createMatch(
       };
     }
 
-    await Match.create({
+    const matchData: any = {
       ...data,
       date: matchDate,
       hostId: new mongoose.Types.ObjectId(session.user.id),
       playersJoined: [],
       status: "open",
-    });
+    };
+
+    if (data.lat !== undefined && data.lng !== undefined && !isNaN(data.lat) && !isNaN(data.lng)) {
+      matchData.locationCoordinates = {
+        type: "Point",
+        coordinates: [data.lng, data.lat], // GeoJSON order is [longitude, latitude]
+      };
+    }
+
+    await Match.create(matchData);
 
     revalidatePath("/matches");
     revalidatePath("/dashboard");
@@ -112,7 +126,7 @@ export async function createMatch(
   }
 }
 
-export async function getMatches(): Promise<MatchDisplayData[]> {
+export async function getMatches(userLat?: number, userLng?: number): Promise<MatchDisplayData[]> {
   try {
     await connectDB();
 
@@ -120,22 +134,104 @@ export async function getMatches(): Promise<MatchDisplayData[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const matches = await Match.find({
-      status: "open",
-      date: { $gte: today },
-    })
-      .sort({ date: 1, time: 1 })
-      .populate<{ hostId: IUser }>("hostId", "name image rating")
-      .lean()
-      .exec();
+    let matches: any[];
+
+    if (userLat !== undefined && userLng !== undefined && !isNaN(userLat) && !isNaN(userLng)) {
+      // Use geospatial aggregation
+      matches = await Match.aggregate([
+        {
+          $geoNear: {
+            near: {
+              type: "Point",
+              coordinates: [userLng, userLat], // [longitude, latitude]
+            },
+            distanceField: "distance",
+            distanceMultiplier: 0.001, // convert meters to kilometers
+            query: { status: "open", date: { $gte: today } },
+            spherical: true,
+          },
+        },
+        { $sort: { distance: 1, date: 1, time: 1 } },
+        {
+          $lookup: {
+            from: "users",
+            localField: "hostId",
+            foreignField: "_id",
+            as: "hostId",
+          },
+        },
+        { $unwind: "$hostId" },
+      ]).exec();
+    } else {
+      // Standard fetch without location
+      matches = await Match.find({
+        status: "open",
+        date: { $gte: today },
+      })
+        .sort({ date: 1, time: 1 })
+        .populate<{ hostId: IUser }>("hostId", "name image rating")
+        .lean()
+        .exec();
+    }
 
     // Map to a serializable format for Next.js Client Components
-    return (matches as unknown as any[]).map((match) => ({
+    return matches.map((match) => ({
       id: match._id.toString(),
       title: match.title,
       sport: match.sport,
       description: match.description || "",
-      date: match.date.toISOString(),
+      date: match.date instanceof Date ? match.date.toISOString() : new Date(match.date).toISOString(),
+      time: match.time,
+      location: match.location,
+      playersNeeded: match.playersNeeded,
+      costPerPlayer: match.costPerPlayer,
+      skillLevelRequired: match.skillLevelRequired,
+      status: match.status,
+      playersJoinedCount: match.playersJoined?.length || 0,
+      distanceInKm: match.distance !== undefined ? Number(match.distance.toFixed(1)) : undefined,
+      host: {
+        id: match.hostId._id.toString(),
+        name: match.hostId.name,
+        image: match.hostId.image || "",
+        rating: match.hostId.rating || 0,
+      },
+    }));
+  } catch (error) {
+    console.error("Failed to fetch matches:", error);
+    return [];
+  }
+}
+
+export type PlayerDisplayData = {
+  id: string;
+  name: string;
+  image: string;
+  rating: number;
+};
+
+export type MatchDetailsData = MatchDisplayData & {
+  playersJoined: PlayerDisplayData[];
+};
+
+export async function getMatchById(id: string): Promise<MatchDetailsData | null> {
+  try {
+    await connectDB();
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
+
+    const match = await Match.findById(id)
+      .populate<{ hostId: IUser }>("hostId", "name image rating")
+      .populate<{ playersJoined: IUser[] }>("playersJoined", "name image rating")
+      .lean()
+      .exec();
+
+    if (!match) return null;
+
+    return {
+      id: match._id.toString(),
+      title: match.title,
+      sport: match.sport,
+      description: match.description || "",
+      date: match.date instanceof Date ? match.date.toISOString() : new Date(match.date).toISOString(),
       time: match.time,
       location: match.location,
       playersNeeded: match.playersNeeded,
@@ -149,9 +245,15 @@ export async function getMatches(): Promise<MatchDisplayData[]> {
         image: match.hostId.image || "",
         rating: match.hostId.rating || 0,
       },
-    }));
+      playersJoined: (match.playersJoined || []).map((p: any) => ({
+        id: p._id.toString(),
+        name: p.name,
+        image: p.image || "",
+        rating: p.rating || 0,
+      })),
+    };
   } catch (error) {
-    console.error("Failed to fetch matches:", error);
-    return [];
+    console.error("Failed to fetch match:", error);
+    return null;
   }
 }

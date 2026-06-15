@@ -30,6 +30,13 @@ export default function MatchCard({ match }: { match: MatchDisplayData }) {
         </div>
       )}
 
+      {/* Distance Badge */}
+      {match.distanceInKm !== undefined && !isFull && (
+        <div className="absolute top-0 right-0 bg-surface border-l border-b border-border text-foreground text-[10px] font-bold tracking-wider px-3 py-1 rounded-bl-lg z-10">
+          {match.distanceInKm} km away
+        </div>
+      )}
+
       {/* Header: Sport & Title */}
       <div className="flex items-start gap-4 mb-4">
         <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 text-2xl">

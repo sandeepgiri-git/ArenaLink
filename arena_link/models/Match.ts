@@ -13,6 +13,10 @@ export interface IMatch extends Document {
   status: "open" | "full" | "completed" | "cancelled";
   hostId: mongoose.Types.ObjectId;
   playersJoined: mongoose.Types.ObjectId[];
+  locationCoordinates?: {
+    type: "Point";
+    coordinates: [number, number]; // [longitude, latitude]
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -80,6 +84,17 @@ const MatchSchema = new Schema<IMatch>(
         ref: "User",
       },
     ],
+    locationCoordinates: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        required: false,
+      },
+    },
   },
   {
     timestamps: true,
@@ -91,6 +106,7 @@ MatchSchema.index({ date: 1, time: 1 });
 MatchSchema.index({ sport: 1 });
 MatchSchema.index({ status: 1 });
 MatchSchema.index({ hostId: 1 });
+MatchSchema.index({ locationCoordinates: "2dsphere" });
 
 const Match: Model<IMatch> =
   mongoose.models.Match || mongoose.model<IMatch>("Match", MatchSchema);

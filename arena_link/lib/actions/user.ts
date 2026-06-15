@@ -150,8 +150,8 @@ export async function updateUserProfile(
     };
 
     if (data.username) updateData.username = data.username.toLowerCase();
-    if (data.age && data.age !== "") updateData.age = data.age;
-    if (data.gender && data.gender !== "") updateData.gender = data.gender;
+    if (typeof data.age === "number") updateData.age = data.age;
+    if (data.gender) updateData.gender = data.gender;
 
     await User.findOneAndUpdate(
       { email: session.user.email },
