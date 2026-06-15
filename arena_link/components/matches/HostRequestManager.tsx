@@ -28,7 +28,7 @@ export default function HostRequestManager({
 
   if (requests.length === 0) {
     return (
-      <div className="glass-card p-6 text-center">
+      <div className="glass-card p-10 text-center">
         <div className="w-12 h-12 rounded-full bg-surface-hover flex items-center justify-center mx-auto mb-3 text-muted">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>

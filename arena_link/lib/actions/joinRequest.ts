@@ -3,6 +3,7 @@
 import connectDB from "@/lib/db";
 import JoinRequest from "@/models/JoinRequest";
 import Match from "@/models/Match";
+import Notification from "@/models/Notification";
 import { auth } from "@/auth";
 import mongoose from "mongoose";
 import { revalidatePath } from "next/cache";
@@ -67,6 +68,15 @@ export async function sendJoinRequest(matchId: string, message: string = "") {
       userId: session.user.id,
       hostId: match.hostId,
       message: message.substring(0, 500),
+    });
+
+    // Notify the host
+    await Notification.create({
+      userId: match.hostId,
+      type: "join_request",
+      message: `${session.user.name || "A player"} wants to join your match: ${match.title}`,
+      relatedMatchId: matchId,
+      relatedUserId: session.user.id,
     });
 
     revalidatePath(`/matches/${matchId}`);
@@ -172,8 +182,10 @@ export async function updateJoinRequestStatus(requestId: string, newStatus: "acc
     request.status = newStatus;
     await request.save();
 
+    let match = null;
+
     if (newStatus === "accepted") {
-      const match = await Match.findById(request.matchId);
+      match = await Match.findById(request.matchId);
       if (match) {
         // Double check they aren't already in
         if (!match.playersJoined.includes(request.userId)) {
@@ -186,6 +198,23 @@ export async function updateJoinRequestStatus(requestId: string, newStatus: "acc
           await match.save();
         }
       }
+    }
+
+    // Notify the player who requested
+    if (!match) {
+      match = await Match.findById(request.matchId);
+    }
+    
+    if (match) {
+      await Notification.create({
+        userId: request.userId,
+        type: newStatus === "accepted" ? "request_accepted" : "request_rejected",
+        message: newStatus === "accepted" 
+          ? `Your request to join ${match.title} was accepted!`
+          : `Your request to join ${match.title} was declined.`,
+        relatedMatchId: request.matchId,
+        relatedUserId: session.user.id,
+      });
     }
 
     revalidatePath(`/matches/${request.matchId}`);
