@@ -8,6 +8,7 @@ import { auth } from "@/auth";
 import mongoose from "mongoose";
 import { revalidatePath } from "next/cache";
 import { IUser } from "@/models/User";
+import { checkRateLimit, RateLimitError } from "@/lib/rateLimit";
 
 export type MessageDisplay = {
   id: string;
@@ -34,6 +35,15 @@ export async function sendMessage(matchId: string, text: string) {
     }
 
     await connectDB();
+
+    try {
+      // Chat spam protection: Max 20 messages per minute (60 seconds)
+      await checkRateLimit(`chat_${userId}`, 20, 60);
+    } catch (e) {
+      if (e instanceof RateLimitError) {
+        return { success: false, message: "You are sending messages too fast. Please slow down." };
+      }
+    }
 
     if (!mongoose.Types.ObjectId.isValid(matchId)) {
       return { success: false, message: "Invalid match ID." };

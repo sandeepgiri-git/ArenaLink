@@ -8,6 +8,7 @@ import { auth } from "@/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import mongoose from "mongoose";
+import { checkRateLimit, RateLimitError } from "@/lib/rateLimit";
 
 export type MatchDisplayData = {
   id: string;
@@ -88,6 +89,18 @@ export async function createMatch(
 
   try {
     await connectDB();
+
+    // TODO: Activate this for production to prevent spam
+    /*
+    try {
+      // Max 5 matches per day (86400 seconds)
+      await checkRateLimit(`create_match_${session.user.id}`, 5, 86400);
+    } catch (e) {
+      if (e instanceof RateLimitError) {
+        return { message: "You have reached the daily limit for creating matches." };
+      }
+    }
+    */
 
     const matchDate = new Date(data.date);
     

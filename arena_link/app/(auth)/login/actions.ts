@@ -4,6 +4,7 @@ import { z } from "zod";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
 import { generateAndSendOTP } from "@/lib/actions/verification";
+import { checkRateLimit, resetRateLimit, RateLimitError } from "@/lib/rateLimit";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email").trim().toLowerCase(),
@@ -38,11 +39,23 @@ export async function loginUser(
   const { email, password } = validatedFields.data;
 
   try {
+    // Check global rate limit: max 5 login attempts per 15 mins
+    await checkRateLimit(`login_${email}`, 5, 900);
+  } catch (e) {
+    if (e instanceof RateLimitError) {
+      return { success: false, message: "Too many login attempts. Please try again in 15 minutes." };
+    }
+  }
+
+  try {
     await signIn("credentials", {
       email,
       password,
       redirect: false,
     });
+
+    // Reset rate limit on successful login
+    await resetRateLimit(`login_${email}`);
 
     return { success: true, message: "Logged in successfully!" };
   } catch (error: any) {

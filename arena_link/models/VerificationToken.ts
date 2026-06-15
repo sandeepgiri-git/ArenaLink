@@ -3,6 +3,9 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 export interface IVerificationToken extends Document {
   email: string;
   token: string;
+  attempts: number;
+  resendCount: number;
+  lastResentAt?: Date;
   expiresAt: Date;
   createdAt: Date;
 }
@@ -18,6 +21,18 @@ const VerificationTokenSchema = new Schema<IVerificationToken>(
     token: {
       type: String,
       required: true,
+    },
+    attempts: {
+      type: Number,
+      default: 0,
+    },
+    resendCount: {
+      type: Number,
+      default: 1,
+    },
+    lastResentAt: {
+      type: Date,
+      default: Date.now,
     },
     expiresAt: {
       type: Date,

@@ -5,6 +5,7 @@ import VerificationToken from "@/models/VerificationToken";
 import User from "@/models/User";
 import { sendEmail } from "@/lib/email";
 import bcrypt from "bcryptjs";
+import { checkRateLimit, RateLimitError } from "@/lib/rateLimit";
 
 // Generate a random 6-digit string
 function generateOTP() {
@@ -14,6 +15,18 @@ function generateOTP() {
 export async function generateAndSendOTP(email: string, name: string) {
   try {
     await connectDB();
+
+    try {
+      // Cooldown: Max 1 resend per 60 seconds
+      await checkRateLimit(`otp_cooldown_${email}`, 1, 60);
+      // Hourly limit: Max 3 resends per hour (3600 seconds)
+      await checkRateLimit(`otp_resend_${email}`, 3, 3600);
+    } catch (e) {
+      if (e instanceof RateLimitError) {
+        return { success: false, message: e.message };
+      }
+      throw e;
+    }
 
     // 1. Delete any existing tokens for this email to prevent spam/confusion
     await VerificationToken.deleteMany({ email });
@@ -72,7 +85,15 @@ export async function verifyOTP(email: string, otp: string) {
     const isValid = await bcrypt.compare(otp, tokenDoc.token);
 
     if (!isValid) {
-      return { success: false, message: "Incorrect verification code." };
+      tokenDoc.attempts += 1;
+      
+      if (tokenDoc.attempts >= 3) {
+        await VerificationToken.deleteOne({ _id: tokenDoc._id });
+        return { success: false, message: "Too many incorrect attempts. Please request a new code." };
+      } else {
+        await tokenDoc.save();
+        return { success: false, message: `Incorrect verification code. ${3 - tokenDoc.attempts} attempts remaining.` };
+      }
     }
 
     // Mark user as verified
