@@ -7,7 +7,7 @@ const protectedRoutes = ["/dashboard", "/profile", "/matches", "/settings"];
 // Routes that should redirect to dashboard if already authenticated
 const authRoutes = ["/login", "/signup"];
 
-export default function middleware(req: NextRequest) {
+export function middleware(req: NextRequest) {
   try {
     const { pathname } = req.nextUrl;
 
