@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowRightIcon } from "@/components/icons/SportIcons";
@@ -9,7 +9,7 @@ import { signIn } from "next-auth/react";
 
 const initialState: LoginState = {};
 
-export default function LoginPage() {
+function LoginForm() {
   const [state, formAction, isPending] = useActionState(
     loginUser,
     initialState
@@ -181,3 +181,12 @@ export default function LoginPage() {
     </>
   );
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center p-8"><div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div></div>}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
