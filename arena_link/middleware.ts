@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 const protectedRoutes = ["/dashboard", "/profile", "/matches", "/settings"];
 const authRoutes = ["/login", "/signup"];
 
-export function proxy(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Check for the auth session cookie
@@ -57,5 +57,13 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/",
+    "/dashboard/:path*",
+    "/profile/:path*",
+    "/matches/:path*",
+    "/settings/:path*",
+    "/login",
+    "/signup"
+  ],
 };
