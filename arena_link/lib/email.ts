@@ -1,5 +1,3 @@
-import nodemailer from "nodemailer";
-
 interface EmailOptions {
   to: string;
   subject: string;
@@ -8,15 +6,13 @@ interface EmailOptions {
 }
 
 export async function sendEmail(options: EmailOptions) {
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587;
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
+  const brevoApiKey = process.env.BREVO_API_KEY;
+  const brevoSenderEmail = process.env.BREVO_SENDER_EMAIL;
 
-  // If no SMTP credentials, we log the email (Useful for local development)
-  if (!smtpHost || !smtpUser || !smtpPass) {
+  // If no Brevo credentials, we log the email (Useful for local development)
+  if (!brevoApiKey || !brevoSenderEmail) {
     console.log("==========================================");
-    console.log("📧 MOCK EMAIL DISPATCH (No SMTP Configured)");
+    console.log("📧 MOCK EMAIL DISPATCH (No Brevo Configured)");
     console.log(`To: ${options.to}`);
     console.log(`Subject: ${options.subject}`);
     console.log("HTML Body:");
@@ -25,25 +21,29 @@ export async function sendEmail(options: EmailOptions) {
     return true;
   }
 
-  // Production SMTP
+  // Production via Brevo REST API
   try {
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpPort === 465, // true for 465, false for other ports
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": brevoApiKey,
+        "content-type": "application/json",
       },
+      body: JSON.stringify({
+        sender: { email: brevoSenderEmail, name: "ArenaLink" },
+        to: [{ email: options.to }],
+        subject: options.subject,
+        htmlContent: options.html,
+        textContent: options.text || options.html.replace(/<[^>]*>?/gm, ""),
+      }),
     });
 
-    await transporter.sendMail({
-      from: `"ArenaLink" <${process.env.SMTP_FROM_EMAIL || "noreply@arenalink.com"}>`,
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-      text: options.text || options.html.replace(/<[^>]*>?/gm, ""), // fallback text stripping HTML
-    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Brevo API Error:", errorData);
+      return false;
+    }
 
     return true;
   } catch (error) {

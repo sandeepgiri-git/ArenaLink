@@ -60,23 +60,31 @@ export async function registerUser(
 
     // 3. Check if user already exists
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return {
-        errors: { email: ["An account with this email already exists"] },
-        message: "Email already in use.",
-      };
-    }
-
+    
     // 4. Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // 5. Create user (emailVerified will be null by default based on schema, but let's be explicit)
-    await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      emailVerified: null,
-    });
+    if (existingUser) {
+      if (existingUser.emailVerified) {
+        return {
+          errors: { email: ["An account with this email already exists"] },
+          message: "Email already in use.",
+        };
+      } else {
+        // User exists but hasn't verified email. Update their details and resend OTP.
+        existingUser.name = name;
+        existingUser.password = hashedPassword;
+        await existingUser.save();
+      }
+    } else {
+      // 5. Create user (emailVerified will be null by default based on schema)
+      await User.create({
+        name,
+        email,
+        password: hashedPassword,
+        emailVerified: null,
+      });
+    }
 
     // 6. Generate and send OTP
     const otpResult = await generateAndSendOTP(email, name);
