@@ -190,7 +190,9 @@ export async function getMatches(userLat?: number, userLng?: number): Promise<Ma
     }
 
     // Map to a serializable format for Next.js Client Components
-    return matches.map((match) => ({
+    return matches
+      .filter((match) => match.hostId && match.hostId._id)
+      .map((match) => ({
       id: match._id.toString(),
       title: match.title,
       sport: match.sport,
@@ -302,7 +304,9 @@ export async function getUserMatches(): Promise<{ upcoming: MatchDisplayData[], 
     const upcoming: MatchDisplayData[] = [];
     const past: MatchDisplayData[] = [];
 
-    matches.forEach(match => {
+    matches
+      .filter((match) => match.hostId && match.hostId._id)
+      .forEach(match => {
       const matchDate = new Date(match.date);
       const isPast = matchDate < today;
 
@@ -369,7 +373,9 @@ export async function getHostedOpenMatches(): Promise<MatchDisplayData[]> {
       .lean()
       .exec();
 
-    return matches.map((match: any) => ({
+    return matches
+      .filter((match: any) => match.hostId && match.hostId._id)
+      .map((match: any) => ({
       id: match._id.toString(),
       title: match.title,
       sport: match.sport,
