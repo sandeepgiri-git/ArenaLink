@@ -1,5 +1,6 @@
 import { auth, signOut } from "@/auth";
 import Link from "next/link";
+import Image from "next/image";
 import NotificationBell from "@/components/layout/NotificationBell";
 
 export default async function TopBar() {
@@ -10,9 +11,7 @@ export default async function TopBar() {
       <div className="flex-1 flex items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Mobile Logo */}
         <Link href="/dashboard" className="lg:hidden flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-base">A</span>
-          </div>
+          <Image src="/arenalink_logo.svg" alt="ArenaLink Logo" width={32} height={32} className="rounded-full object-cover" />
           <span className="text-lg font-bold tracking-tight">
             Arena<span className="gradient-text">Link</span>
           </span>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
@@ -108,9 +109,7 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         {/* Logo */}
         <div className={`flex items-center h-16 border-b border-border ${collapsed ? 'justify-center' : 'justify-start px-4'}`}>
           <Link href="/dashboard" className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-9 h-9 rounded-xl bg-primary flex-shrink-0 flex items-center justify-center shadow-sm">
-              <span className="text-primary-foreground font-bold text-lg">A</span>
-            </div>
+            <Image src="/arenalink_logo.svg" alt="ArenaLink Logo" width={36} height={36} className="rounded-full object-cover flex-shrink-0" />
             {!collapsed && (
               <span className="text-lg font-bold tracking-tight whitespace-nowrap">
                 Arena<span className="gradient-text">Link</span>

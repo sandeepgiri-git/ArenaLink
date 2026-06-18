@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   FootballIcon,
   BasketballIcon,
@@ -67,11 +68,7 @@ export default async function AuthLayout({
         <div className="relative z-10 p-12 max-w-lg text-center">
           {/* Logo */}
           <Link href="/" className="inline-flex items-center gap-2.5 mb-10 group">
-            <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center transition-transform group-hover:scale-110">
-              <span className="text-primary-foreground font-bold text-xl">
-                A
-              </span>
-            </div>
+            <Image src="/arenalink_logo.svg" alt="ArenaLink Logo" width={44} height={44} className="rounded-full object-cover transition-transform group-hover:scale-110" />
             <span className="text-2xl font-bold tracking-tight text-white">
               Arena
               <span className="text-primary">Link</span>
@@ -114,11 +111,7 @@ export default async function AuthLayout({
           {/* Mobile Logo (visible on small screens) */}
           <div className="lg:hidden flex items-center justify-center gap-2.5 mb-8">
             <Link href="/" className="inline-flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">
-                  A
-                </span>
-              </div>
+              <Image src="/arenalink_logo.svg" alt="ArenaLink Logo" width={36} height={36} className="rounded-full object-cover" />
               <span className="text-xl font-bold tracking-tight">
                 Arena
                 <span className="gradient-text">Link</span>
