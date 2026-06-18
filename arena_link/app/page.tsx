@@ -490,10 +490,10 @@ export default async function Home() {
               </h4>
               <ul className="space-y-2.5">
                 <li>
-                  <span className="text-muted text-sm">About Us</span>
+                  <Link href="/about" className="text-muted hover:text-foreground text-sm transition-colors">About Us</Link>
                 </li>
                 <li>
-                  <span className="text-muted text-sm">Contact</span>
+                  <Link href="/contact" className="text-muted hover:text-foreground text-sm transition-colors">Contact</Link>
                 </li>
                 <li>
                   <span className="text-muted text-sm">Careers</span>
@@ -508,13 +508,13 @@ export default async function Home() {
               </h4>
               <ul className="space-y-2.5">
                 <li>
-                  <span className="text-muted text-sm">Privacy Policy</span>
+                  <Link href="/privacy" className="text-muted hover:text-foreground text-sm transition-colors">Privacy Policy</Link>
                 </li>
                 <li>
-                  <span className="text-muted text-sm">Terms of Service</span>
+                  <Link href="/terms" className="text-muted hover:text-foreground text-sm transition-colors">Terms of Service</Link>
                 </li>
                 <li>
-                  <span className="text-muted text-sm">Cookie Policy</span>
+                  <Link href="/refund" className="text-muted hover:text-foreground text-sm transition-colors">Refund Policy</Link>
                 </li>
               </ul>
             </div>
