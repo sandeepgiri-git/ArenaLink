@@ -1,5 +1,7 @@
 import Link from "next/link";
 import Navbar from "@/components/ui/Navbar";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 import {
   FootballIcon,
   CricketIcon,
@@ -108,7 +110,13 @@ const stats = [
   { value: "4.9★", label: "App Rating" },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+
+  if (session) {
+    redirect("/dashboard");
+  }
+
   return (
     <>
       <Navbar />

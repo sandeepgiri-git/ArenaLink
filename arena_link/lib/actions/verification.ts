@@ -18,9 +18,9 @@ export async function generateAndSendOTP(email: string, name: string) {
 
     try {
       // Cooldown: Max 1 resend per 60 seconds
-      await checkRateLimit(`otp_cooldown_${email}`, 1, 60);
+      await checkRateLimit(`otp_cooldown_${email}`, 3, 60);
       // Hourly limit: Max 3 resends per hour (3600 seconds)
-      await checkRateLimit(`otp_resend_${email}`, 3, 3600);
+      await checkRateLimit(`otp_resend_${email}`, 5, 3600);
     } catch (e) {
       if (e instanceof RateLimitError) {
         return { success: false, message: e.message };
