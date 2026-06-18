@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { MenuIcon, XIcon } from "@/components/icons/SportIcons";
 
 export default function Navbar() {
@@ -29,11 +30,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16 lg:h-18">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group" id="logo">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center transition-transform group-hover:scale-110">
-              <span className="text-primary-foreground font-bold text-lg">
-                A
-              </span>
-            </div>
+            <Image src="/arenalink_logo.svg" alt="ArenaLink Logo" width={36} height={36} className="rounded-full object-cover transition-transform group-hover:scale-110" />
             <span className="text-xl font-bold tracking-tight">
               Arena
               <span className="gradient-text">Link</span>

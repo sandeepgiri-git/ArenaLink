@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Navbar from "@/components/ui/Navbar";
+import Image from "next/image";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import {
@@ -434,11 +435,7 @@ export default async function Home() {
             {/* Brand */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-lg">
-                    A
-                  </span>
-                </div>
+                <Image src="/arenalink_logo.svg" alt="ArenaLink Logo" width={36} height={36} className="rounded-full object-cover" />
                 <span className="text-xl font-bold tracking-tight">
                   Arena
                   <span className="gradient-text">Link</span>
