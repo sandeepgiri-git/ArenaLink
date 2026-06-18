@@ -98,8 +98,21 @@ export default async function MatchDetailsPage({
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in-up space-y-8 pb-12">
+      {match.status === "completed" && (
+        <div className="bg-success/10 border border-success/20 text-success p-4 rounded-xl flex items-center justify-center gap-2 mb-6 font-medium">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          This match has been completed!
+        </div>
+      )}
+
       {/* Header Section */}
       <div className="glass-card p-6 md:p-8 relative overflow-hidden">
+        {match.status === "completed" && (
+          <div className="absolute top-0 left-0 w-full h-1 bg-success"></div>
+        )}
         {/* Background Decoration */}
         <div className="absolute top-0 right-0 -mt-16 -mr-16 text-[200px] opacity-[0.03] pointer-events-none select-none">
           {SPORT_EMOJIS[match.sport.toLowerCase()] || "🏅"}
@@ -280,7 +293,7 @@ export default async function MatchDetailsPage({
           {/* Group Chat */}
           {(isHost || isJoined) && userId && (
             <div className="mt-8">
-              <MatchChat matchId={id} initialMessages={initialMessages} currentUserId={userId} />
+              <MatchChat matchId={id} initialMessages={initialMessages} currentUserId={userId} isCompleted={match.status === "completed"} />
             </div>
           )}
         </div>
@@ -288,7 +301,7 @@ export default async function MatchDetailsPage({
         {/* Right Column: Actions / Host Management */}
         <div className="space-y-6">
           {/* Action Card */}
-          {!isHost && (
+          {!isHost && match.status !== "completed" && (
             <div className="glass-card p-6 sticky top-6">
               <h3 className="font-bold text-lg mb-4">Join this match</h3>
               <JoinMatchButton 
@@ -314,7 +327,7 @@ export default async function MatchDetailsPage({
           )}
 
           {/* Host Requests Panel */}
-          {isHost && (
+          {isHost && match.status !== "completed" && (
             <div className="md:sticky md:top-6 space-y-6 md:max-h-[calc(100vh-3rem)] md:overflow-y-auto no-scrollbar pb-6">
               <div className="glass-card p-6 border-primary/20">
                 <div className="flex items-center gap-3 mb-4">

@@ -53,6 +53,19 @@ const createMatchSchema = z.object({
   lng: z.coerce.number().optional(),
 });
 
+async function autoCompletePastMatches() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  try {
+    await Match.updateMany(
+      { status: { $in: ["open", "full"] }, date: { $lt: today } },
+      { $set: { status: "completed" } }
+    );
+  } catch (error) {
+    console.error("Failed to auto-complete past matches:", error);
+  }
+}
+
 export async function createMatch(
   _prevState: MatchCreateState,
   formData: FormData
@@ -144,6 +157,7 @@ export async function createMatch(
 export async function getMatches(userLat?: number, userLng?: number): Promise<MatchDisplayData[]> {
   try {
     await connectDB();
+    await autoCompletePastMatches();
 
     // Find open matches from today onwards
     const today = new Date();
@@ -234,6 +248,7 @@ export type MatchDetailsData = MatchDisplayData & {
 export async function getMatchById(id: string): Promise<MatchDetailsData | null> {
   try {
     await connectDB();
+    await autoCompletePastMatches();
     if (!mongoose.Types.ObjectId.isValid(id)) return null;
 
     const match = await Match.findById(id)
@@ -284,6 +299,7 @@ export async function getUserMatches(): Promise<{ upcoming: MatchDisplayData[], 
     if (!userId) return { upcoming: [], past: [], currentUserId: null };
 
     await connectDB();
+    await autoCompletePastMatches();
 
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
@@ -359,6 +375,7 @@ export async function getHostedOpenMatches(): Promise<MatchDisplayData[]> {
     if (!session?.user?.id) return [];
 
     await connectDB();
+    await autoCompletePastMatches();
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
