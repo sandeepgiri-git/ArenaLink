@@ -7,17 +7,7 @@ import HostRequestManager from "@/components/matches/HostRequestManager";
 import JoinMatchButton from "@/components/matches/JoinMatchButton";
 import MatchChat from "@/components/matches/MatchChat";
 import { getMatchMessages } from "@/lib/actions/chat";
-import StaticLocationMapWrapper from "@/components/matches/StaticLocationMapWrapper";
 import { Metadata } from "next";
-
-const SPORT_EMOJIS: Record<string, string> = {
-  football: "⚽",
-  cricket: "🏏",
-  basketball: "🏀",
-  volleyball: "🏐",
-  tennis: "🎾",
-  badminton: "🏸",
-};
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -27,26 +17,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     return { title: "Match Not Found - ArenaLink" };
   }
 
-  const matchDate = new Date(match.date).toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-
   return {
     title: `${match.title} | ArenaLink`,
-    description: `Join ${match.host.name}'s ${match.sport} match on ${matchDate} at ${match.time}. ${match.playersNeeded - match.playersJoinedCount} spots left!`,
-    openGraph: {
-      title: `⚽ ${match.title}`,
-      description: `Join ${match.host.name}'s ${match.sport} match on ${matchDate} at ${match.time}. ${match.playersNeeded - match.playersJoinedCount} spots left!`,
-      type: "website",
-      siteName: "ArenaLink",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: `${match.title} | ArenaLink`,
-      description: `Join ${match.host.name}'s ${match.sport} match on ${matchDate} at ${match.time}.`,
-    },
+    description: `Join ${match.host.name}'s ${match.sport} match on ${match.date} at ${match.time}.`,
   };
 }
 
@@ -70,7 +43,6 @@ export default async function MatchDetailsPage({
   const spotsLeft = match.playersNeeded - match.playersJoinedCount;
   const isFull = spotsLeft <= 0;
 
-  // If host, fetch all requests. Otherwise fetch just the user's request.
   let hostRequests: any[] = [];
   let userRequestStatus = null;
 
@@ -83,7 +55,6 @@ export default async function MatchDetailsPage({
     userRequestStatus = "accepted";
   }
 
-  // Fetch chat messages if user is host or joined
   let initialMessages: any[] = [];
   if ((isHost || isJoined) && userId) {
     initialMessages = await getMatchMessages(id);
@@ -97,262 +68,182 @@ export default async function MatchDetailsPage({
   });
 
   return (
-    <div className="max-w-4xl mx-auto animate-fade-in-up space-y-8 pb-12">
-      {match.status === "completed" && (
-        <div className="bg-success/10 border border-success/20 text-success p-4 rounded-xl flex items-center justify-center gap-2 mb-6 font-medium">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-          </svg>
-          This match has been completed!
-        </div>
-      )}
-
-      {/* Header Section */}
-      <div className="glass-card p-6 md:p-8 relative overflow-hidden">
-        {match.status === "completed" && (
-          <div className="absolute top-0 left-0 w-full h-1 bg-success"></div>
-        )}
-        {/* Background Decoration */}
-        <div className="absolute top-0 right-0 -mt-16 -mr-16 text-[200px] opacity-[0.03] pointer-events-none select-none">
-          {SPORT_EMOJIS[match.sport.toLowerCase()] || "🏅"}
-        </div>
-        
-        <div className="relative z-10">
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            <span className="px-3 py-1 bg-primary/10 text-primary text-sm font-semibold rounded-full capitalize">
-              {match.sport}
-            </span>
-            <span className={`px-3 py-1 text-sm font-semibold rounded-full ${
-              match.status === "open" ? "bg-success/10 text-success" : 
-              match.status === "full" ? "bg-warning/10 text-warning" : 
-              "bg-surface-hover text-muted"
-            }`}>
-              {match.status.charAt(0).toUpperCase() + match.status.slice(1)}
-            </span>
-            {match.skillLevelRequired !== "any" && (
-              <span className="px-3 py-1 bg-surface border border-border text-foreground text-sm font-medium rounded-full capitalize">
-                {match.skillLevelRequired} Level
-              </span>
-            )}
-          </div>
-
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">{match.title}</h1>
-
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-surface-hover border border-border flex items-center justify-center overflow-hidden">
-              {match.host.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={match.host.image} alt={match.host.name} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-sm font-bold text-muted">
-                  {match.host.name.charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Hosted by</p>
-              <Link href={`/profile/${match.host.id}`} className="font-medium hover:text-primary transition-colors">
-                {match.host.name}
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-8">
-        {/* Left Column: Details */}
-        <div className="md:col-span-2 space-y-8">
+    <>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-12 animate-fade-in-up">
+        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 lg:items-start">
           
-          {/* Info Grid */}
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="glass-card p-5 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center text-lg flex-shrink-0">
-                📅
+          {/* Left Column: Content */}
+          <div className="lg:col-span-8 space-y-8">
+            {/* Match Title */}
+            <section>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="bg-primary-container text-on-primary-container font-label-sm text-label-sm px-3 py-1 rounded-full uppercase tracking-wider">
+                  {match.sport}
+                </span>
+                <span className="bg-secondary-container text-on-secondary-container font-label-sm text-label-sm px-3 py-1 rounded-full uppercase tracking-wider">
+                  {match.skillLevelRequired === "any" ? "Casual" : match.skillLevelRequired} Level
+                </span>
               </div>
-              <div>
-                <p className="text-sm text-muted mb-1">Date & Time</p>
-                <p className="font-medium">{formattedDate}</p>
-                <p className="font-medium text-muted-foreground">{match.time}</p>
+              <h1 className="font-display-lg-mobile text-display-lg-mobile md:font-display-lg md:text-display-lg text-primary uppercase leading-none mb-4">
+                {match.title}
+              </h1>
+              <div className="flex items-center gap-4 text-outline">
+                <div className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">groups</span>
+                  <span className="font-label-md text-label-md uppercase">{match.playersNeeded} Players Max</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">location_on</span>
+                  <span className="font-label-md text-label-md uppercase">{match.location}</span>
+                </div>
               </div>
-            </div>
+            </section>
 
-            <div className="glass-card p-5 flex flex-col gap-4 sm:col-span-2 md:col-span-1 lg:col-span-2">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-lg flex-shrink-0">
-                  📍
-                </div>
-                <div>
-                  <p className="text-sm text-muted mb-1">Location</p>
-                  <p className="font-medium">{match.location}</p>
-                </div>
-              </div>
-              
-              {match.coordinates && match.coordinates.length === 2 && (
-                <div className="mt-2 w-full">
-                  <StaticLocationMapWrapper lat={match.coordinates[1]} lng={match.coordinates[0]} />
+            {/* Stylized Dark Map Placeholder */}
+            {match.coordinates && match.coordinates.length === 2 && (
+              <section className="relative rounded-xl overflow-hidden aspect-video group">
+                <div className="absolute inset-0 bg-gradient-to-t from-surface-dim to-transparent z-10 pointer-events-none"></div>
+                <div 
+                  className="w-full h-full bg-surface-container-high transition-transform duration-700 group-hover:scale-105 bg-cover bg-center" 
+                  style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDN6CcfSVaVQxC6cYELM9n_BR8u8nFc9d20W4BuqdpHGuB6YHRWhtuUBO0UdpgN6No0-vKFTOsD8TEwwypEg5C-bOzwuOUmtUspOEExTTPIoQ7TJnFFvG8Gt16Q7nstTbKFPLV47vyfnPEIVnJ70zOGsck9_vS8-TU6kz3zzyoHw_fnLC1HJ3octbaoCR8vYox2on-GJYAlKLUochwAoYS6yuYAA8whe7A-Zqp1v8P6Ym_JiktcgMuFJItXXNkODeFnPfNAUt_rpyuK')" }}
+                ></div>
+                <div className="absolute bottom-6 left-6 z-20">
                   <a 
                     href={`https://www.google.com/maps/search/?api=1&query=${match.coordinates[1]},${match.coordinates[0]}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-3 flex items-center justify-center gap-2 w-full btn-secondary py-2.5 text-sm font-medium hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-colors"
+                    className="bg-surface-bright/90 backdrop-blur-md text-on-surface font-label-md text-label-md px-6 py-3 rounded-full border border-white/10 hover:bg-primary hover:text-on-primary transition-all flex items-center gap-2"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
-                      <line x1="9" y1="3" x2="9" y2="21"></line>
-                      <line x1="15" y1="3" x2="15" y2="21"></line>
-                    </svg>
-                    Open in Google Maps
+                    <span className="material-symbols-outlined">directions_run</span>
+                    GET DIRECTIONS
                   </a>
                 </div>
-              )}
-            </div>
+              </section>
+            )}
 
-            <div className="glass-card p-5 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-success/10 text-success flex items-center justify-center text-lg flex-shrink-0">
-                👥
-              </div>
-              <div>
-                <p className="text-sm text-muted mb-1">Players</p>
-                <p className="font-medium">
-                  {match.playersJoinedCount} / {match.playersNeeded} Joined
-                </p>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {isFull ? "Match Full" : `${spotsLeft} spots remaining`}
-                </p>
-              </div>
-            </div>
-
-            <div className="glass-card p-5 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-warning/10 text-warning flex items-center justify-center text-lg flex-shrink-0">
-                💰
-              </div>
-              <div>
-                <p className="text-sm text-muted mb-1">Cost Per Player</p>
-                <p className="font-medium">
-                  {match.costPerPlayer === 0 ? "Free" : `₹${match.costPerPlayer}`}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Description */}
-          {match.description && (
-            <div className="glass-card p-6">
-              <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
-                <span className="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-sm">📝</span>
-                About this match
-              </h2>
-              <p className="text-muted whitespace-pre-wrap leading-relaxed">
-                {match.description}
+            {/* Description */}
+            <section className="space-y-4">
+              <h3 className="font-headline-md text-headline-md text-on-surface border-b border-outline-variant pb-2">MATCH DESCRIPTION</h3>
+              <p className="font-body-lg text-body-lg text-on-surface-variant leading-relaxed whitespace-pre-wrap">
+                {match.description || "No description provided by the host."}
               </p>
-            </div>
-          )}
+            </section>
 
-          {/* Players Roster */}
-          <div className="glass-card p-6">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-sm">🏃</span>
-              Players Roster ({match.playersJoinedCount}/{match.playersNeeded})
-            </h2>
-            
-            {match.playersJoined.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {/* Roster */}
+            <section className="space-y-6">
+              <div className="flex justify-between items-end border-b border-outline-variant pb-2">
+                <h3 className="font-headline-md text-headline-md text-on-surface">ROSTER ({match.playersJoinedCount}/{match.playersNeeded})</h3>
+                <span className="font-label-md text-label-md text-primary">{spotsLeft > 0 ? `${spotsLeft} SPOTS REMAINING` : "MATCH FULL"}</span>
+              </div>
+              
+              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4">
                 {match.playersJoined.map((player) => (
-                  <Link href={`/profile/${player.id}`} key={player.id} className="flex flex-col items-center p-4 rounded-xl bg-surface border border-border hover:border-primary/30 transition-colors text-center group">
-                    <div className="w-14 h-14 rounded-full bg-surface-hover border-2 border-background overflow-hidden mb-3">
+                  <Link href={`/profile/${player.id}`} key={player.id} className="flex flex-col items-center gap-2 group">
+                    <div className="w-16 h-16 rounded-full border border-outline-variant overflow-hidden bg-surface-container group-hover:border-primary transition-colors">
                       {player.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={player.image} alt={player.name} className="w-full h-full object-cover" />
+                        <img className="w-full h-full object-cover" src={player.image} alt={player.name} />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-lg font-bold text-muted">
-                          {player.name.charAt(0).toUpperCase()}
-                        </div>
+                        <div className="w-full h-full flex items-center justify-center font-bold text-xl">{player.name.charAt(0)}</div>
                       )}
                     </div>
-                    <p className="font-medium text-sm group-hover:text-primary transition-colors line-clamp-1 w-full">{player.name}</p>
-                    <div className="flex items-center justify-center gap-1 mt-1 text-xs text-warning">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                      </svg>
-                      {player.rating.toFixed(1)}
-                    </div>
+                    <span className="font-label-sm text-label-sm text-center truncate w-full group-hover:text-primary transition-colors">{player.name.split(" ")[0]}</span>
                   </Link>
                 ))}
+                
+                {Array.from({ length: Math.min(10, spotsLeft) }).map((_, i) => (
+                  <div key={i} className="flex flex-col items-center gap-2">
+                    <div className="w-16 h-16 rounded-full border-2 border-dashed border-outline-variant flex items-center justify-center bg-surface-container-low">
+                      <span className="material-symbols-outlined text-outline">add</span>
+                    </div>
+                    <span className="font-label-sm text-label-sm text-outline">Open</span>
+                  </div>
+                ))}
               </div>
-            ) : (
-              <div className="text-center p-8 bg-surface rounded-xl border border-border border-dashed">
-                <p className="text-muted">No players have joined yet.</p>
-                {!isHost && !isJoined && !isFull && (
-                  <p className="text-sm mt-1">Be the first to join!</p>
-                )}
+            </section>
+            
+            {/* Host Section */}
+            <section className="space-y-4 pt-4 border-t border-outline-variant">
+              <h3 className="font-headline-md text-headline-md text-on-surface">MATCH HOST</h3>
+              <div className="flex items-center gap-4 bg-surface-container-low p-4 rounded-xl border border-outline-variant/30">
+                <div className="w-16 h-16 rounded-full overflow-hidden">
+                  {match.host.image ? (
+                    <img className="w-full h-full object-cover" src={match.host.image} alt={match.host.name} />
+                  ) : (
+                    <div className="w-full h-full bg-surface-container-high flex items-center justify-center font-bold text-xl text-primary">{match.host.name.charAt(0)}</div>
+                  )}
+                </div>
+                <div>
+                  <h4 className="font-headline-md text-on-surface">{match.host.name}</h4>
+                  <Link href={`/profile/${match.host.id}`} className="text-primary font-label-sm text-label-sm hover:underline">View Profile</Link>
+                </div>
+              </div>
+            </section>
+
+            {/* Group Chat */}
+            {(isHost || isJoined) && userId && (
+              <div className="mt-8 pt-8 border-t border-outline-variant">
+                <MatchChat matchId={id} initialMessages={initialMessages} currentUserId={userId} isCompleted={match.status === "completed"} />
               </div>
             )}
           </div>
 
-          {/* Group Chat */}
-          {(isHost || isJoined) && userId && (
-            <div className="mt-8">
-              <MatchChat matchId={id} initialMessages={initialMessages} currentUserId={userId} isCompleted={match.status === "completed"} />
-            </div>
-          )}
-        </div>
-
-        {/* Right Column: Actions / Host Management */}
-        <div className="space-y-6">
-          {/* Action Card */}
-          {!isHost && match.status !== "completed" && (
-            <div className="glass-card p-6 sticky top-6">
-              <h3 className="font-bold text-lg mb-4">Join this match</h3>
-              <JoinMatchButton 
-                matchId={id} 
-                initialStatus={userRequestStatus as "pending" | "accepted" | "rejected" | null}
-                isFull={isFull}
-              />
-              
-              <div className="mt-6 pt-6 border-t border-border">
-                <p className="text-sm text-muted mb-3 text-center">Share with friends</p>
-                <button className="w-full btn-secondary py-2 flex items-center justify-center gap-2">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="18" cy="5" r="3"></circle>
-                    <circle cx="6" cy="12" r="3"></circle>
-                    <circle cx="18" cy="19" r="3"></circle>
-                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                  </svg>
-                  Share Match
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Host Requests Panel */}
-          {isHost && match.status !== "completed" && (
-            <div className="md:sticky md:top-6 space-y-6 md:max-h-[calc(100vh-3rem)] md:overflow-y-auto no-scrollbar pb-6">
-              <div className="glass-card p-6 border-primary/20">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                    </svg>
+          {/* Right Column: Sticky Action Panel */}
+          <aside className="lg:col-span-4 lg:sticky lg:top-24">
+            <div className="glass-panel p-6 rounded-2xl space-y-6 shadow-2xl">
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 group">
+                  <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary border border-white/5 transition-transform group-hover:scale-110">
+                    <span className="material-symbols-outlined">calendar_today</span>
                   </div>
                   <div>
-                    <h3 className="font-bold">You are the Host</h3>
-                    <p className="text-xs text-muted">Manage your match here</p>
+                    <p className="font-label-sm text-label-sm text-outline uppercase tracking-widest">Date</p>
+                    <p className="font-headline-md text-headline-md">{formattedDate}</p>
                   </div>
                 </div>
                 
-                <div className="flex flex-col xl:flex-row gap-2">
-                  <button className="flex-1 btn-secondary text-sm py-2">Edit Match</button>
-                  <button className="flex-1 btn-secondary text-sm py-2 text-danger hover:bg-danger/10 hover:border-danger/20">Cancel Match</button>
+                <div className="flex items-center gap-4 group">
+                  <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary border border-white/5 transition-transform group-hover:scale-110">
+                    <span className="material-symbols-outlined">schedule</span>
+                  </div>
+                  <div>
+                    <p className="font-label-sm text-label-sm text-outline uppercase tracking-widest">Time</p>
+                    <p className="font-headline-md text-headline-md">{match.time}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4 group">
+                  <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-secondary border border-white/5 transition-transform group-hover:scale-110">
+                    <span className="material-symbols-outlined">payments</span>
+                  </div>
+                  <div>
+                    <p className="font-label-sm text-label-sm text-outline uppercase tracking-widest">Cost</p>
+                    <p className="font-headline-lg text-headline-lg text-secondary">
+                      {match.costPerPlayer === 0 ? "Free" : `₹${match.costPerPlayer}`}
+                    </p>
+                  </div>
                 </div>
               </div>
-
-              <HostRequestManager matchId={id} initialRequests={hostRequests} />
+              
+              {isHost && (
+                <div className="pt-4 border-t border-outline-variant space-y-4">
+                  <h4 className="font-bold text-primary mb-2 uppercase text-sm tracking-widest">Host Controls</h4>
+                  <HostRequestManager matchId={id} initialRequests={hostRequests} />
+                </div>
+              )}
             </div>
-          )}
+          </aside>
+          
         </div>
       </div>
-    </div>
+
+      {/* Sticky Bottom Bar */}
+      {!isHost && match.status !== "completed" && (
+        <JoinMatchButton 
+          matchId={id} 
+          initialStatus={userRequestStatus as "pending" | "accepted" | "rejected" | null}
+          isFull={isFull}
+        />
+      )}
+    </>
   );
 }

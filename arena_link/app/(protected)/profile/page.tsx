@@ -24,166 +24,126 @@ export default async function ProfilePage() {
     month: "long",
     year: "numeric",
   });
+  
+  const rating = profile.rating > 0 ? profile.rating.toFixed(1) : "—";
+  const reliability = profile.reliabilityScore;
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      {/* Profile Header Card */}
-      <div className="glass-card overflow-hidden">
-        {/* Cover gradient */}
-        <div className="h-24 sm:h-32 bg-gradient-to-r from-primary via-accent to-secondary relative">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2cpIi8+PC9zdmc+')] opacity-50" />
-        </div>
-
-        <div className="px-6 sm:px-8 pb-6">
-          {/* Avatar + Name */}
-          <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-10 sm:-mt-12 relative z-10">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-surface border-4 border-surface shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0">
-              {profile.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={profile.image}
-                  alt={profile.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-4xl font-bold text-primary">
-                  {profile.name.charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
-
-            <div className="flex-1 sm:pb-1">
-              <h1 className="text-2xl font-bold">{profile.name}</h1>
-              {profile.username && (
-                <p className="text-muted text-sm">@{profile.username}</p>
-              )}
-              <div className="flex items-center gap-3 mt-1 text-xs text-muted">
-                {profile.city && (
-                  <span className="flex items-center gap-1">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
-                    {profile.city}
-                  </span>
-                )}
-                <span className="flex items-center gap-1">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                  Joined {joinedDate}
-                </span>
-              </div>
-            </div>
-
-            <Link
-              href="/profile/edit"
-              className="btn-primary text-sm py-2.5 px-5 self-start sm:self-end"
-              id="edit-profile-btn"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                <path d="m15 5 4 4" />
-              </svg>
-              Edit Profile
-            </Link>
-          </div>
-
-          {/* Bio */}
-          {profile.bio && (
-            <p className="mt-4 text-sm text-muted leading-relaxed max-w-2xl">
-              {profile.bio}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="glass-card p-5 text-center">
-          <p className="text-2xl font-bold text-primary">
-            {userStats?.totalMatchesPlayed || 0}
-          </p>
-          <p className="text-xs text-muted mt-1 uppercase font-bold tracking-wider">Matches</p>
-        </div>
-        <div className="glass-card p-5 text-center">
-          <p className="text-2xl font-bold text-warning">
-            {profile.rating > 0 ? `${profile.rating.toFixed(1)} ★` : "—"}
-          </p>
-          <p className="text-xs text-muted mt-1 uppercase font-bold tracking-wider">Rating</p>
-        </div>
-        <div className="glass-card p-5 text-center">
-          <p className="text-2xl font-bold text-success">
-            {userStats?.hostCount || 0}
-          </p>
-          <p className="text-xs text-muted mt-1 uppercase font-bold tracking-wider">Hosted</p>
-        </div>
-        <div className="glass-card p-5 text-center">
-          <p className="text-2xl font-bold text-accent capitalize">
-            {userStats?.mostPlayedSport || "None"}
-          </p>
-          <p className="text-xs text-muted mt-1 uppercase font-bold tracking-wider">Top Sport</p>
-        </div>
-      </div>
-
-      {/* Details Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Sports Interests */}
-        <div className="glass-card p-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <span>🏅</span> Sports Interests
-          </h2>
-          {profile.sportsInterests.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {profile.sportsInterests.map((sport) => (
-                <span
-                  key={sport}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium"
-                >
-                  <span>{SPORT_EMOJIS[sport.toLowerCase()] || "🎯"}</span>
-                  {sport.charAt(0).toUpperCase() + sport.slice(1)}
-                </span>
-              ))}
-            </div>
+    <div className="relative z-10 max-w-lg mx-auto flex flex-col items-center animate-fade-in-up pb-12 pt-8">
+      {/* Avatar Section */}
+      <div className="relative mb-6">
+        <div className="w-32 h-32 md:w-40 md:h-40 rounded-full p-1 glow-green border-[3px] border-secondary bg-surface-container-low overflow-hidden">
+          {profile.image ? (
+            <img 
+              className="w-full h-full object-cover rounded-full" 
+              alt={profile.name} 
+              src={profile.image} 
+            />
           ) : (
-            <p className="text-sm text-muted">
-              No sports selected yet.{" "}
-              <Link href="/profile/edit" className="text-primary hover:underline">
-                Add your sports
-              </Link>
-            </p>
+            <div className="w-full h-full flex items-center justify-center font-bold text-5xl bg-surface text-primary rounded-full">
+              {profile.name.charAt(0).toUpperCase()}
+            </div>
           )}
         </div>
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-secondary text-on-secondary px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase shadow-lg whitespace-nowrap">
+          {profile.skillLevel || "Available"}
+        </div>
+      </div>
+      
+      {/* Identity Section */}
+      <div className="text-center mb-8">
+        <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1 uppercase">{profile.name}</h2>
+        <p className="font-body-md text-on-surface-variant opacity-80">
+          {profile.username ? `@${profile.username}` : `Joined ${joinedDate}`}
+        </p>
+        {profile.city && (
+          <div className="flex items-center justify-center gap-1 mt-2 text-on-surface-variant">
+            <span className="material-symbols-outlined text-sm">location_on</span>
+            <span className="font-label-sm">{profile.city}</span>
+          </div>
+        )}
+      </div>
 
-        {/* Personal Info */}
-        <div className="glass-card p-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <span>📋</span> Details
-          </h2>
-          <div className="space-y-3 text-sm">
-            <div className="flex items-center justify-between py-2 border-b border-border">
-              <span className="text-muted">Skill Level</span>
-              <span className="font-medium capitalize">
-                {profile.skillLevel || "—"}
-              </span>
+      {/* Bio */}
+      {profile.bio && (
+        <p className="text-center text-on-surface-variant mb-8 max-w-md px-4 leading-relaxed">
+          {profile.bio}
+        </p>
+      )}
+
+      {/* Tags Section */}
+      {profile.sportsInterests.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-3 mb-10">
+          {profile.sportsInterests.map((sport) => (
+            <span key={sport} className="px-4 py-1.5 bg-surface-container-high text-on-surface rounded-full font-label-md text-label-md border border-outline-variant/30 flex items-center gap-2">
+              {SPORT_EMOJIS[sport.toLowerCase()] || "🎯"}
+              {sport.charAt(0).toUpperCase() + sport.slice(1)}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Stats Row */}
+      <div className="glass-panel w-full rounded-2xl p-6 flex justify-around items-center mb-10">
+        <div className="text-center">
+          <p className="font-label-sm text-label-sm text-outline uppercase tracking-wider mb-1">Match Rating</p>
+          <div className="flex items-center justify-center gap-1">
+            <span className="font-headline-md text-headline-md text-secondary">{rating}</span>
+            <span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+          </div>
+        </div>
+        
+        <div className="w-[1px] h-10 bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+        
+        <div className="text-center">
+          <p className="font-label-sm text-label-sm text-outline uppercase tracking-wider mb-1">Reliability</p>
+          <p className="font-headline-md text-headline-md text-primary">{reliability}%</p>
+        </div>
+        
+        <div className="w-[1px] h-10 bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+        
+        <div className="text-center">
+          <p className="font-label-sm text-label-sm text-outline uppercase tracking-wider mb-1">Matches</p>
+          <p className="font-headline-md text-headline-md text-on-surface">{userStats?.totalMatchesPlayed || 0}</p>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="w-full flex flex-col gap-4">
+        <Link href="/profile/edit" className="w-full py-4 bg-primary-container text-white font-label-md text-label-md uppercase tracking-widest rounded-xl glow-purple text-center active:scale-95 transition-all duration-150">
+          Edit Profile
+        </Link>
+        <button className="w-full py-4 bg-transparent border-2 border-outline-variant/30 text-on-surface font-label-md text-label-md uppercase tracking-widest rounded-xl hover:bg-surface-bright active:scale-95 transition-all duration-150">
+          Settings
+        </button>
+      </div>
+
+      {/* Recent Highlights (Bento Grid Style) */}
+      <div className="w-full mt-12 mb-8">
+        <h3 className="font-headline-md text-headline-md text-on-surface mb-6 px-2">RECENT ACTIVITY</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2 h-40 glass-panel rounded-2xl relative overflow-hidden group">
+            <div 
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" 
+              style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAeHieROdIW8epH7NXm1JIThPJALghXUOCBfXhg119R42_v42F1AkPvcqLcg_dlzhtR95c5_QkWbu16VpK4mdcrXZJwu_R9yktR3TBHX87DMyPorPIJ7xIFN8XB9_U2_jOfQg6yr-g_iKSmew8cBxiWzyTJUEMMq6jfxbGjXYgjkwSBOegjqZi2BSXkP2m8FeZDw7N96sNdJfQtg1FXcF4y-Emj24gOmWg6uTb6xZ6YudZVeQCcxw2i5U-Nf8qYErkTGYVnpxDw2cti')" }}
+            ></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-80"></div>
+            <div className="absolute bottom-4 left-4">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1 block">Last Match</span>
+              <p className="font-body-md font-bold text-white">Sunday Night League • Won 3-1</p>
             </div>
-            <div className="flex items-center justify-between py-2 border-b border-border">
-              <span className="text-muted">Gender</span>
-              <span className="font-medium capitalize">
-                {profile.gender || "—"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between py-2 border-b border-border">
-              <span className="text-muted">Age</span>
-              <span className="font-medium">{profile.age || "—"}</span>
-            </div>
-            <div className="flex items-center justify-between py-2">
-              <span className="text-muted">Email</span>
-              <span className="font-medium">{profile.email}</span>
-            </div>
+          </div>
+          
+          <div className="h-40 glass-panel rounded-2xl flex flex-col items-center justify-center p-4 text-center">
+            <span className="material-symbols-outlined text-primary text-3xl mb-2">emoji_events</span>
+            <p className="font-label-sm text-outline uppercase mb-1">MVP Count</p>
+            <p className="font-headline-md text-on-surface">12</p>
+          </div>
+          
+          <div className="h-40 glass-panel rounded-2xl flex flex-col items-center justify-center p-4 text-center">
+            <span className="material-symbols-outlined text-secondary text-3xl mb-2">trending_up</span>
+            <p className="font-label-sm text-outline uppercase mb-1">Win Streak</p>
+            <p className="font-headline-md text-on-surface">5</p>
           </div>
         </div>
       </div>

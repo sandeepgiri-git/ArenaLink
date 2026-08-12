@@ -12,14 +12,13 @@ interface JoinMatchButtonProps {
 export default function JoinMatchButton({ matchId, initialStatus, isFull }: JoinMatchButtonProps) {
   const [status, setStatus] = useState<"pending" | "accepted" | "rejected" | null>(initialStatus);
   const [isPending, setIsPending] = useState(false);
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   const handleJoin = async () => {
     setIsPending(true);
     setError("");
 
-    const result = await sendJoinRequest(matchId, message);
+    const result = await sendJoinRequest(matchId, "");
 
     if (result.success) {
       setStatus("pending");
@@ -30,78 +29,71 @@ export default function JoinMatchButton({ matchId, initialStatus, isFull }: Join
     setIsPending(false);
   };
 
-  if (status === "accepted") {
-    return (
-      <div className="p-4 rounded-xl border border-success/30 bg-success/10 text-success flex items-center justify-center gap-2 font-medium">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-          <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
-        You have joined this match!
-      </div>
-    );
-  }
+  const getButtonContent = () => {
+    if (status === "accepted") {
+      return (
+        <button disabled className="w-full md:w-auto md:min-w-[320px] bg-secondary-container text-on-secondary-container font-headline-lg text-headline-lg py-5 px-12 rounded-xl uppercase tracking-tight shadow-[0_4px_20px_rgba(0,165,114,0.4)] flex items-center justify-center gap-4">
+          <span className="material-symbols-outlined font-bold">check_circle</span>
+          <span className="relative z-10">MATCH JOINED</span>
+        </button>
+      );
+    }
+    
+    if (status === "pending") {
+      return (
+        <button disabled className="w-full md:w-auto md:min-w-[320px] bg-surface-container-high text-warning font-headline-lg text-headline-lg py-5 px-12 rounded-xl uppercase tracking-tight border border-warning/30 flex items-center justify-center gap-4">
+          <span className="material-symbols-outlined font-bold animate-pulse">hourglass_empty</span>
+          <span className="relative z-10">REQUEST PENDING</span>
+        </button>
+      );
+    }
 
-  if (status === "pending") {
-    return (
-      <div className="p-4 rounded-xl border border-warning/30 bg-warning/10 text-warning flex items-center justify-center gap-2 font-medium">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-        Join Request Pending Approval
-      </div>
-    );
-  }
+    if (status === "rejected") {
+      return (
+        <button disabled className="w-full md:w-auto md:min-w-[320px] bg-error-container/20 text-error font-headline-lg text-headline-lg py-5 px-12 rounded-xl uppercase tracking-tight border border-error/30 flex items-center justify-center gap-4">
+          <span className="material-symbols-outlined font-bold">block</span>
+          <span className="relative z-10">REQUEST DECLINED</span>
+        </button>
+      );
+    }
 
-  if (status === "rejected") {
-    return (
-      <div className="p-4 rounded-xl border border-danger/30 bg-danger/10 text-danger flex flex-col items-center justify-center gap-1 font-medium text-center">
-        <div className="flex items-center gap-2">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="15" y1="9" x2="9" y2="15"></line>
-            <line x1="9" y1="9" x2="15" y2="15"></line>
-          </svg>
-          Request Declined
-        </div>
-        <span className="text-xs font-normal opacity-80">The host declined your request.</span>
-      </div>
-    );
-  }
+    if (isFull) {
+      return (
+        <button disabled className="w-full md:w-auto md:min-w-[320px] bg-surface-container-highest text-outline font-headline-lg text-headline-lg py-5 px-12 rounded-xl uppercase tracking-tight flex items-center justify-center gap-4">
+          <span className="material-symbols-outlined font-bold">group_off</span>
+          <span className="relative z-10">MATCH IS FULL</span>
+        </button>
+      );
+    }
 
-  if (isFull) {
     return (
-      <div className="p-4 rounded-xl border border-border bg-surface text-muted flex items-center justify-center gap-2 font-medium">
-        Match is currently full
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      {error && (
-        <div className="p-3 rounded-xl bg-danger/10 border border-danger/20 text-danger text-sm">
-          {error}
-        </div>
-      )}
-      <button
+      <button 
         onClick={handleJoin}
         disabled={isPending}
-        className="w-full btn-primary py-3.5 flex justify-center items-center font-semibold text-base shadow-lg shadow-primary/20"
+        className="w-full md:w-auto md:min-w-[320px] bg-primary text-on-primary font-headline-lg text-headline-lg py-5 px-12 rounded-xl uppercase tracking-tight shadow-[0_4px_20px_rgba(124,58,237,0.4)] hover:shadow-[0_4px_30px_rgba(124,58,237,0.6)] hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center gap-4 overflow-hidden relative group"
       >
         {isPending ? (
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-            Sending Request...
-          </div>
+          <>
+            <span className="material-symbols-outlined animate-spin font-bold">sync</span>
+            <span className="relative z-10">RESERVING SPOT...</span>
+          </>
         ) : (
-          "Request to Join Match"
+          <>
+            <span className="relative z-10">JOIN MATCH NOW</span>
+            <span className="material-symbols-outlined relative z-10 font-bold">bolt</span>
+            <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12"></div>
+          </>
         )}
       </button>
-      <p className="text-xs text-center text-muted">
-        The host will need to approve your request.
-      </p>
+    );
+  };
+
+  return (
+    <div className="fixed bottom-0 left-0 w-full z-50 bg-surface-dim/95 backdrop-blur-2xl border-t border-primary/20 px-4 py-6 md:py-8 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+      <div className="max-w-screen-xl mx-auto flex flex-col md:flex-row items-center justify-center gap-4">
+        {error && <div className="text-error font-label-sm absolute -top-8 bg-error-container/20 px-4 py-1 rounded-full">{error}</div>}
+        {getButtonContent()}
+      </div>
     </div>
   );
 }
