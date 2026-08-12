@@ -35,9 +35,9 @@ export default function ProtectedLayoutClient({
             <span className="font-headline-md text-headline-md font-bold tracking-tighter text-primary">ARENALINK</span>
           </Link>
           <div className="flex items-center gap-4">
-            <button className="material-symbols-outlined text-on-surface-variant hover:bg-surface-bright p-2 rounded-full transition-colors">
+            <Link href="/notifications" className="material-symbols-outlined text-on-surface-variant hover:bg-surface-bright p-2 rounded-full transition-colors">
               notifications
-            </button>
+            </Link>
             <div className="w-8 h-8 rounded-full overflow-hidden border border-primary/30">
               <img 
                 className="w-full h-full object-cover" 

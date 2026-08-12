@@ -37,7 +37,7 @@ export default function MatchChat({ matchId, initialMessages, currentUserId, isC
     }, 3000);
 
     return () => clearInterval(intervalId);
-  }, [matchId, messages.length]);
+  }, [matchId, messages.length, isCompleted]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,18 +71,18 @@ export default function MatchChat({ matchId, initialMessages, currentUserId, isC
   };
 
   return (
-    <div className="glass-card flex flex-col h-[500px]">
+    <div className="glass-panel flex flex-col h-[500px] rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-border bg-surface/50 flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
-        <h3 className="font-semibold text-foreground">Match Group Chat</h3>
-        <span className="text-xs text-muted ml-auto">Messages auto-delete 1 day after match</span>
+      <div className="p-4 border-b border-outline-variant/30 bg-surface-container-low/50 flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+        <h3 className="font-semibold text-on-surface">Match Group Chat</h3>
+        <span className="text-xs text-on-surface-variant ml-auto">Messages auto-delete 1 day after match</span>
       </div>
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-muted">
+          <div className="h-full flex flex-col items-center justify-center text-on-surface-variant">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mb-2 opacity-50">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
@@ -97,30 +97,30 @@ export default function MatchChat({ matchId, initialMessages, currentUserId, isC
               <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                 <div className={`flex gap-2 max-w-[80%] ${isMe ? "flex-row-reverse" : "flex-row"}`}>
                   {!isMe && (
-                    <Link href={`/profile/${msg.userId}`} className="w-8 h-8 rounded-full bg-surface-hover border border-border flex-shrink-0 flex items-center justify-center overflow-hidden mt-auto">
+                    <Link href={`/profile/${msg.userId}`} className="w-8 h-8 rounded-full bg-surface-bright border border-outline-variant/30 flex-shrink-0 flex items-center justify-center overflow-hidden mt-auto">
                       {msg.user.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={msg.user.image} alt={msg.user.name} className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-xs font-bold text-muted">{msg.user.name.charAt(0).toUpperCase()}</span>
+                        <span className="text-xs font-bold text-on-surface-variant">{msg.user.name.charAt(0).toUpperCase()}</span>
                       )}
                     </Link>
                   )}
                   
                   <div className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                     {!isMe && (
-                      <span className="text-[10px] text-muted ml-1 mb-0.5">{msg.user.name}</span>
+                      <span className="text-[10px] text-on-surface-variant ml-1 mb-0.5">{msg.user.name}</span>
                     )}
                     <div 
                       className={`px-4 py-2.5 rounded-2xl ${
                         isMe 
-                          ? "bg-primary text-primary-foreground rounded-br-sm" 
-                          : "bg-surface border border-border text-foreground rounded-bl-sm"
+                          ? "bg-primary-container text-white rounded-br-sm" 
+                          : "bg-surface-container border border-outline-variant/30 text-on-surface rounded-bl-sm"
                       }`}
                     >
                       <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
                     </div>
-                    <span className="text-[10px] text-muted mt-0.5 mx-1">
+                    <span className="text-[10px] text-on-surface-variant mt-0.5 mx-1">
                       {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
@@ -133,9 +133,9 @@ export default function MatchChat({ matchId, initialMessages, currentUserId, isC
       </div>
 
       {/* Input Area */}
-      <div className="p-4 border-t border-border bg-surface/50">
+      <div className="p-4 border-t border-outline-variant/30 bg-surface-container-low/50">
         {isCompleted ? (
-          <div className="text-center p-3 rounded-lg bg-surface border border-border text-muted text-sm">
+          <div className="text-center p-3 rounded-lg bg-surface-container border border-outline-variant/30 text-on-surface-variant text-sm">
             Chat is paused because the match is completed.
           </div>
         ) : (
@@ -145,14 +145,14 @@ export default function MatchChat({ matchId, initialMessages, currentUserId, isC
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type a message..."
-              className="input-field flex-1 !py-2.5"
+              className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-2 text-on-surface focus:outline-none focus:border-primary focus:shadow-[0_0_10px_rgba(124,58,237,0.4)] transition-all placeholder:text-outline/50 flex-1"
               maxLength={1000}
               disabled={isSending}
             />
             <button 
               type="submit" 
               disabled={!newMessage.trim() || isSending}
-              className="btn-primary px-5 py-2.5 flex items-center justify-center disabled:opacity-50 transition-all active:scale-95"
+              className="bg-primary-container text-white font-label-md px-5 py-2.5 rounded-xl uppercase tracking-widest hover:shadow-[0_0_20px_rgba(124,58,237,0.5)] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center"
               title="Send Message"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

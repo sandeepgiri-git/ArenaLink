@@ -1,6 +1,7 @@
 import { getUserProfile } from "@/lib/actions/user";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { getUserMatches } from "@/lib/actions/match";
 
 export default async function DashboardPage() {
   const profile = await getUserProfile();
@@ -8,6 +9,8 @@ export default async function DashboardPage() {
   if (!profile) {
     redirect("/login");
   }
+
+  const { upcoming: upcomingMatches } = await getUserMatches();
 
   // Calculate profile completion
   const profileFields = [
@@ -67,17 +70,17 @@ export default async function DashboardPage() {
         <div className="glass-panel rounded-xl p-5 flex flex-col items-center justify-center text-center space-y-2 group hover:border-secondary/50 transition-all duration-300">
           <span className="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Reliability</span>
           <div className="relative flex items-center justify-center">
-            <svg className="w-16 h-16">
-              <circle className="text-surface-bright" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" strokeWidth="4"></circle>
+            <svg className="w-20 h-20">
+              <circle className="text-surface-bright" cx="40" cy="40" fill="transparent" r="36" stroke="currentColor" strokeWidth="4"></circle>
               <circle 
                 className="text-secondary glow-green transition-all duration-700 -rotate-90 origin-center" 
-                cx="32" 
-                cy="32" 
+                cx="40" 
+                cy="40" 
                 fill="transparent" 
-                r="28" 
+                r="36" 
                 stroke="currentColor" 
-                strokeDasharray="175.9" 
-                strokeDashoffset={175.9 - (175.9 * reliability) / 100} 
+                strokeDasharray="226.2" 
+                strokeDashoffset={226.2 - (226.2 * reliability) / 100} 
                 strokeLinecap="round" 
                 strokeWidth="4"
               ></circle>
@@ -113,69 +116,104 @@ export default async function DashboardPage() {
           <h2 className="font-headline-md text-headline-md text-on-surface">Upcoming Matches</h2>
           <Link href="/matches" className="text-primary font-label-md text-label-md hover:underline">View All</Link>
         </div>
-        <div className="flex overflow-x-auto gap-4 pb-6 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
-          
-          {/* Match Card 1 */}
-          <div className="snap-start min-w-[280px] md:min-w-[340px] glass-panel rounded-xl overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-            <div className="h-2 bg-primary"></div>
-            <div className="p-4 space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="bg-primary/10 text-primary px-2 py-[2px] rounded font-label-sm text-label-sm">5v5 Football</span>
-                <span className="text-on-surface-variant font-label-sm text-label-sm">Today, 18:30</span>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <div className="text-center flex-1">
-                  <div className="w-12 h-12 bg-surface-container-high rounded-lg mx-auto mb-2 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-primary">shield</span>
+        
+        {upcomingMatches.length > 0 ? (
+          <div className="flex overflow-x-auto gap-4 pb-6 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
+            {upcomingMatches.slice(0, 5).map((match, idx) => {
+              const matchDate = new Date(match.date);
+              const isHost = match.host.id === profile.id;
+              
+              // Define icons per sport
+              const getSportIcon = (sport: string) => {
+                switch(sport.toLowerCase()) {
+                  case 'football': return 'sports_soccer';
+                  case 'basketball': return 'sports_basketball';
+                  case 'tennis': return 'sports_tennis';
+                  case 'cricket': return 'sports_cricket';
+                  case 'volleyball': return 'sports_volleyball';
+                  default: return 'sports_kabaddi';
+                }
+              };
+
+              return (
+                <Link 
+                  href={`/matches/${match.id}`}
+                  key={match.id} 
+                  className={`snap-start min-w-[280px] md:min-w-[340px] glass-panel rounded-xl overflow-hidden group hover:scale-[1.02] transition-transform duration-300 ${idx % 2 === 1 ? 'opacity-90 hover:opacity-100' : ''}`}
+                >
+                  <div className={`h-2 ${isHost ? 'bg-secondary' : 'bg-primary'}`}></div>
+                  <div className="p-4 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className={`${isHost ? 'bg-secondary/10 text-secondary' : 'bg-primary/10 text-primary'} px-2 py-[2px] rounded font-label-sm text-label-sm uppercase tracking-wider`}>
+                        {match.sport}
+                      </span>
+                      <span className="text-on-surface-variant font-label-sm text-label-sm">
+                        {matchDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, {match.time}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between py-2">
+                      <div className="text-center flex-1">
+                        <div className="w-12 h-12 bg-surface-container-high rounded-lg mx-auto mb-2 flex items-center justify-center overflow-hidden">
+                          {isHost && profile.image ? (
+                            <img src={profile.image} alt="You" className="w-full h-full object-cover" />
+                          ) : isHost ? (
+                            <span className="material-symbols-outlined text-secondary">person</span>
+                          ) : (
+                            <img src={match.host.image} alt={match.host.name} className="w-full h-full object-cover" />
+                          )}
+                        </div>
+                        <span className="font-label-md text-label-md block truncate px-2">
+                          {isHost ? "You (Host)" : match.host.name.split(" ")[0]}
+                        </span>
+                      </div>
+                      
+                      <div className="flex flex-col items-center px-2">
+                        <span className="font-headline-md text-headline-md text-outline opacity-50">VS</span>
+                        <span className="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">
+                          {match.playersJoinedCount}/{match.playersNeeded}
+                        </span>
+                      </div>
+                      
+                      <div className="text-center flex-1">
+                        <div className="w-12 h-12 bg-surface-container-high rounded-lg mx-auto mb-2 flex items-center justify-center">
+                          <span className="material-symbols-outlined text-primary">{getSportIcon(match.sport)}</span>
+                        </div>
+                        <span className="font-label-md text-label-md block italic opacity-70">Team</span>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-surface-container-low/50 rounded-lg p-2 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-on-surface-variant text-[18px]">location_on</span>
+                        <span className="text-label-sm font-label-sm text-on-surface-variant truncate max-w-[120px]">{match.location}</span>
+                      </div>
+                      <span className={`${match.status === "full" ? "text-error" : "text-secondary"} font-label-sm text-label-sm uppercase`}>
+                        {match.status}
+                      </span>
+                    </div>
                   </div>
-                  <span className="font-label-md text-label-md block">Wolves FC</span>
-                </div>
-                <span className="font-headline-md text-headline-md text-outline opacity-50 px-6">VS</span>
-                <div className="text-center flex-1">
-                  <div className="w-12 h-12 bg-surface-container-high rounded-lg mx-auto mb-2 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-secondary">sports_soccer</span>
-                  </div>
-                  <span className="font-label-md text-label-md block">Dragons</span>
-                </div>
-              </div>
-              <div className="bg-surface-container-low/50 rounded-lg p-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-on-surface-variant text-[18px]">location_on</span>
-                  <span className="text-label-sm font-label-sm text-on-surface-variant truncate max-w-[120px]">Metro Arena</span>
-                </div>
-                <span className="text-secondary font-label-sm text-label-sm">Confirmed</span>
-              </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="glass-panel p-8 text-center rounded-xl flex flex-col items-center justify-center min-h-[200px] border border-outline-variant/30 border-dashed">
+            <span className="material-symbols-outlined text-4xl text-outline-variant mb-3">event_busy</span>
+            <h3 className="font-headline-md text-on-surface mb-2">No Upcoming Matches</h3>
+            <p className="text-on-surface-variant text-body-sm mb-6 max-w-sm">
+              You don't have any matches scheduled. Join an existing game or host your own to get started!
+            </p>
+            <div className="flex gap-4">
+              <Link href="/matches" className="bg-surface-bright text-on-surface hover:bg-surface-container-highest px-6 py-2 rounded-lg font-label-md transition-colors border border-outline-variant/50">
+                Browse Matches
+              </Link>
+              <Link href="/matches/create" className="bg-primary-container text-white px-6 py-2 rounded-lg font-label-md hover:shadow-[0_0_15px_rgba(124,58,237,0.4)] transition-all">
+                Host a Match
+              </Link>
             </div>
           </div>
-
-          {/* Match Card 2 */}
-          <div className="snap-start min-w-[280px] md:min-w-[340px] glass-panel rounded-xl overflow-hidden group hover:scale-[1.02] transition-transform duration-300 opacity-80">
-            <div className="h-2 bg-surface-bright"></div>
-            <div className="p-4 space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="bg-surface-container-high text-on-surface px-2 py-[2px] rounded font-label-sm text-label-sm">Tennis Single</span>
-                <span className="text-on-surface-variant font-label-sm text-label-sm">Sat, 14:00</span>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <div className="text-center flex-1">
-                  <div className="w-12 h-12 bg-surface-container-high rounded-lg mx-auto mb-2 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-on-surface">sports_tennis</span>
-                  </div>
-                  <span className="font-label-md text-label-md block">{firstName} (You)</span>
-                </div>
-                <span className="font-headline-md text-headline-md text-outline opacity-50 px-6">VS</span>
-                <div className="text-center flex-1">
-                  <div className="w-12 h-12 bg-surface-container-high rounded-lg mx-auto mb-2 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-tertiary">person_search</span>
-                  </div>
-                  <span className="font-label-md text-label-md block italic">Searching...</span>
-                </div>
-              </div>
-              <button className="w-full py-2 rounded-lg border border-primary/30 text-primary font-label-md text-label-md hover:bg-primary/5 transition-colors">Manage Game</button>
-            </div>
-          </div>
-
-        </div>
+        )}
       </section>
 
       {/* Recommended For You */}
