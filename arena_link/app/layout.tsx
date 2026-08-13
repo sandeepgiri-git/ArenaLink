@@ -28,18 +28,22 @@ export const metadata: Metadata = {
   ],
 };
 
+import { ThemeProvider } from "@/components/theme-provider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`dark ${inter.variable} ${oswald.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${oswald.variable}`} suppressHydrationWarning>
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
-      <body className="min-h-screen flex flex-col font-body-md text-on-background bg-background selection:bg-secondary selection:text-on-secondary">
-        {children}
+      <body className="min-h-screen flex flex-col font-body-md text-on-background bg-background selection:bg-secondary selection:text-on-secondary transition-colors duration-300">
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

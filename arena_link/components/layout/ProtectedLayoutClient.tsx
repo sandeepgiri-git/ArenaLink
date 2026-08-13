@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface NavItem {
   label: string;
@@ -24,6 +26,8 @@ export default function ProtectedLayoutClient({
   topBar?: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const user = session?.user;
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-body-md text-on-surface pb-24">
@@ -34,17 +38,24 @@ export default function ProtectedLayoutClient({
             <span className="material-symbols-outlined text-primary text-headline-md">sports_kabaddi</span>
             <span className="font-headline-md text-headline-md font-bold tracking-tighter text-primary">ARENALINK</span>
           </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/notifications" className="material-symbols-outlined text-on-surface-variant hover:bg-surface-bright p-2 rounded-full transition-colors">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <ThemeToggle />
+            <Link href="/notifications" className="material-symbols-outlined text-on-surface-variant hover:bg-surface-bright p-2 rounded-full transition-colors flex items-center justify-center w-9 h-9">
               notifications
             </Link>
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-primary/30">
-              <img 
-                className="w-full h-full object-cover" 
-                alt="Profile" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzR7fVGXQgDTMKuwbn4vypPcr064EvXOD6Vkf1UWyRymAq8OYet4p8qsbMG1f1ghpAT29WMOCLZWZN6FmKkg8zXFguApe3H0xADQo_h-Irw-QHRQmq9j2MIzxDk1grZzY_GsR-ihfKpqM3SF5e_0fGKST_dpJb1MY1OHAVIZR2KfBqCQiAIjviSTzRkbVa24j4tQqxn43S5q9MwB-9vKF_Xw492cCs7ywl3A7hklod9thH6fD4RnJSvzLY1dmDXrmpjLp938XD6hqO" 
-              />
-            </div>
+            <Link href="/profile" className="w-9 h-9 rounded-full overflow-hidden border border-primary/30 flex items-center justify-center bg-surface-container-high hover:border-primary transition-colors ml-1">
+              {user?.image ? (
+                <img 
+                  className="w-full h-full object-cover" 
+                  alt={user.name || "Profile"} 
+                  src={user.image} 
+                />
+              ) : (
+                <span className="font-bold text-on-surface text-sm">
+                  {user?.name?.charAt(0).toUpperCase() || "U"}
+                </span>
+              )}
+            </Link>
           </div>
         </div>
       </header>
@@ -54,23 +65,55 @@ export default function ProtectedLayoutClient({
       </main>
 
       {/* BottomNavBar */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 bg-surface-container-low/90 backdrop-blur-xl border-t border-primary-container/30 shadow-[0_-4px_20px_rgba(124,58,237,0.3)] rounded-t-xl md:justify-center md:gap-12">
+      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 pb-[env(safe-area-inset-bottom,8px)] bg-surface-container-lowest/95 backdrop-blur-2xl border-t border-white/[0.04] shadow-[0_-8px_40px_rgba(0,0,0,0.6)] md:justify-center md:gap-16">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href + "/"));
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center transition-all ${
-                isActive 
-                  ? "text-primary font-bold shadow-[0_0_15px_rgba(210,187,255,0.4)] scale-110" 
-                  : "text-outline opacity-70 hover:text-primary-fixed"
-              }`}
+              className="group relative flex flex-col items-center justify-center w-16 h-14"
             >
-              <span className="material-symbols-outlined" style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}>
-                {item.icon}
+              {/* Active Glow Aura */}
+              {isActive && (
+                <div className="absolute -inset-1 rounded-2xl bg-primary/10 blur-lg animate-pulse pointer-events-none" />
+              )}
+
+              {/* Top Pill Indicator */}
+              <div
+                className={`absolute -top-[1px] h-[3px] rounded-b-full transition-all duration-500 ease-[cubic-bezier(.4,0,.2,1)] ${
+                  isActive
+                    ? "w-8 bg-primary shadow-[0_2px_12px_rgba(124,58,237,0.9)]"
+                    : "w-0 bg-transparent"
+                }`}
+              />
+
+              {/* Icon */}
+              <div
+                className={`relative z-10 flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(.4,0,.2,1)] ${
+                  isActive
+                    ? "text-primary -translate-y-1 scale-110 drop-shadow-[0_0_8px_rgba(210,187,255,0.7)]"
+                    : "text-outline group-hover:text-primary-fixed-dim group-hover:-translate-y-1 group-hover:scale-105"
+                }`}
+              >
+                <span
+                  className="material-symbols-outlined text-[26px]"
+                  style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
+                >
+                  {item.icon}
+                </span>
+              </div>
+
+              {/* Label */}
+              <span
+                className={`relative z-10 text-[10px] font-bold tracking-wider uppercase transition-all duration-500 ease-[cubic-bezier(.4,0,.2,1)] ${
+                  isActive
+                    ? "text-primary opacity-100 translate-y-0 mt-0.5"
+                    : "text-outline opacity-0 translate-y-1 group-hover:opacity-70 group-hover:translate-y-0 group-hover:text-primary-fixed-dim mt-0.5"
+                }`}
+              >
+                {item.label}
               </span>
-              <span className="font-label-sm text-label-sm mt-1">{item.label}</span>
             </Link>
           );
         })}

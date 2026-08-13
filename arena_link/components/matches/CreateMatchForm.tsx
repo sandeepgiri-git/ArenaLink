@@ -8,16 +8,21 @@ import dynamic from "next/dynamic";
 
 const LocationPickerMap = dynamic(() => import("./LocationPickerMap"), {
   ssr: false,
-  loading: () => <div className="h-64 bg-surface-hover rounded-xl animate-pulse flex items-center justify-center text-muted text-sm">Loading map...</div>,
+  loading: () => (
+    <div className="h-64 bg-surface-container-highest/30 rounded-2xl animate-pulse flex flex-col items-center justify-center text-outline-variant text-sm border border-outline-variant/10">
+      <span className="material-symbols-outlined text-[32px] mb-2 text-outline-variant/50">map</span>
+      Loading map...
+    </div>
+  ),
 });
 
 const SPORTS = [
-  { id: "football", label: "Football", emoji: "⚽" },
-  { id: "cricket", label: "Cricket", emoji: "🏏" },
-  { id: "basketball", label: "Basketball", emoji: "🏀" },
-  { id: "volleyball", label: "Volleyball", emoji: "🏐" },
-  { id: "tennis", label: "Tennis", emoji: "🎾" },
-  { id: "badminton", label: "Badminton", emoji: "🏸" },
+  { id: "football", label: "Football", icon: "sports_soccer" },
+  { id: "cricket", label: "Cricket", icon: "sports_cricket" },
+  { id: "basketball", label: "Basketball", icon: "sports_basketball" },
+  { id: "volleyball", label: "Volleyball", icon: "sports_volleyball" },
+  { id: "tennis", label: "Tennis", icon: "sports_tennis" },
+  { id: "badminton", label: "Badminton", icon: "sports_tennis" },
 ];
 
 const SKILL_LEVELS = [
@@ -37,6 +42,9 @@ export default function CreateMatchForm() {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodeError, setGeocodeError] = useState("");
   const locationRef = useRef<HTMLInputElement>(null);
+  
+  const [selectedSport, setSelectedSport] = useState<string>("");
+  const [selectedSkill, setSelectedSkill] = useState<string>("any");
 
   // Get tomorrow's date for default minimum date
   const tomorrow = new Date();
@@ -79,287 +87,341 @@ export default function CreateMatchForm() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto animate-fade-in-up pb-8">
+    <div className="max-w-3xl mx-auto animate-fade-in-up pb-8 mt-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Host a Match</h1>
-          <p className="text-sm text-muted mt-0.5">
+          <h1 className="font-display-lg-mobile text-display-lg-mobile md:font-display-lg md:text-display-lg text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
+            Host a Match
+          </h1>
+          <p className="text-on-surface-variant font-body-sm mt-1">
             Create a new sports event and invite players.
           </p>
         </div>
-        <Link href="/matches" className="btn-ghost text-sm">
-          Cancel
+        <Link href="/matches" className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface hover:bg-surface-bright hover:text-primary transition-colors">
+          <span className="material-symbols-outlined">close</span>
         </Link>
       </div>
 
       {/* Error Message */}
       {state.message && !state.success && (
-        <div className="mb-6 p-3 rounded-xl bg-[rgba(239,68,68,0.1)] border border-danger/20 text-danger text-sm">
-          {state.message}
+        <div className="mb-6 p-4 rounded-2xl bg-error/10 border border-error/30 text-error flex items-start gap-3 animate-fade-in-up">
+          <span className="material-symbols-outlined">error</span>
+          <p className="font-label-md mt-0.5">{state.message}</p>
         </div>
       )}
 
-      <form action={formAction} className="space-y-8">
+      <form action={formAction} className="space-y-6">
         <input type="hidden" name="lat" value={lat || ""} />
         <input type="hidden" name="lng" value={lng || ""} />
+        <input type="hidden" name="sport" value={selectedSport} />
+        <input type="hidden" name="skillLevelRequired" value={selectedSkill} />
         
         {/* Section 1: Basic Details */}
-        <div className="glass-card p-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-sm">📝</span>
+        <div className="glass-panel p-6 sm:p-8 rounded-3xl relative overflow-hidden group">
+          <div className="absolute -right-20 -top-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none transition-all duration-700 group-hover:bg-primary/10"></div>
+          
+          <h2 className="font-headline-md text-primary mb-6 flex items-center gap-3">
+            <span className="material-symbols-outlined p-2 bg-primary/10 rounded-xl">edit_note</span>
             Match Details
           </h2>
-          <div className="space-y-4">
-            
+          
+          <div className="space-y-6 relative z-10">
             {/* Title */}
             <div>
-              <label htmlFor="title" className="block text-sm font-medium mb-1.5">
-                Match Title <span className="text-danger">*</span>
+              <label htmlFor="title" className="block font-label-md text-on-surface-variant mb-2">
+                Match Title <span className="text-error">*</span>
               </label>
               <input
                 id="title"
                 name="title"
                 type="text"
                 required
-                className={`input-field ${state.errors?.title ? "border-danger" : ""}`}
+                className={`w-full bg-surface-container-lowest/50 border ${state.errors?.title ? "border-error focus:border-error focus:ring-error/20" : "border-outline-variant/30 focus:border-primary focus:ring-primary/20"} rounded-xl px-5 py-4 text-on-surface focus:outline-none focus:ring-4 transition-all placeholder:text-outline-variant`}
                 placeholder="e.g., Weekend Football at Vijay Nagar Turf"
               />
               {state.errors?.title && (
-                <p className="text-danger text-xs mt-1">{state.errors.title[0]}</p>
+                <p className="text-error text-xs mt-2 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">error</span> {state.errors.title[0]}</p>
               )}
             </div>
 
             {/* Sport Selection */}
             <div>
-              <label htmlFor="sport" className="block text-sm font-medium mb-1.5">
-                Sport <span className="text-danger">*</span>
+              <label className="block font-label-md text-on-surface-variant mb-3">
+                Sport <span className="text-error">*</span>
               </label>
-              <select
-                id="sport"
-                name="sport"
-                required
-                className={`input-field bg-surface text-foreground appearance-none ${
-                  state.errors?.sport ? "border-danger" : ""
-                }`}
-              >
-                <option value="">Select a sport...</option>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {SPORTS.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.emoji} {s.label}
-                  </option>
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setSelectedSport(s.id)}
+                    className={`relative p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all duration-300 overflow-hidden ${
+                      selectedSport === s.id 
+                        ? "bg-primary/15 border border-primary text-primary-fixed shadow-[0_0_20px_rgba(124,58,237,0.2)] -translate-y-1" 
+                        : "bg-surface-container-high/50 border border-outline-variant/20 text-on-surface-variant hover:bg-surface-bright hover:text-on-surface hover:-translate-y-1"
+                    }`}
+                  >
+                    {selectedSport === s.id && (
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-50"></div>
+                    )}
+                    <span className="material-symbols-outlined text-[32px] relative z-10" style={selectedSport === s.id ? { fontVariationSettings: "'FILL' 1" } : {}}>
+                      {s.icon}
+                    </span>
+                    <span className="font-label-md relative z-10">{s.label}</span>
+                  </button>
                 ))}
-              </select>
+              </div>
               {state.errors?.sport && (
-                <p className="text-danger text-xs mt-1">{state.errors.sport[0]}</p>
+                <p className="text-error text-xs mt-2 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">error</span> {state.errors.sport[0]}</p>
               )}
             </div>
 
             {/* Description */}
             <div>
-              <label htmlFor="description" className="block text-sm font-medium mb-1.5">
+              <label htmlFor="description" className="block font-label-md text-on-surface-variant mb-2">
                 Description
               </label>
               <textarea
                 id="description"
                 name="description"
                 rows={3}
-                className={`input-field resize-none ${state.errors?.description ? "border-danger" : ""}`}
-                placeholder="Any special instructions or details? (Optional)"
+                className={`w-full bg-surface-container-lowest/50 border ${state.errors?.description ? "border-error focus:border-error" : "border-outline-variant/30 focus:border-primary focus:ring-primary/20"} rounded-xl px-5 py-4 text-on-surface focus:outline-none focus:ring-4 transition-all placeholder:text-outline-variant resize-none`}
+                placeholder="Any special instructions, rules, or details? (Optional)"
                 maxLength={1000}
               />
               {state.errors?.description && (
-                <p className="text-danger text-xs mt-1">{state.errors.description[0]}</p>
+                <p className="text-error text-xs mt-2 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">error</span> {state.errors.description[0]}</p>
               )}
             </div>
           </div>
         </div>
 
         {/* Section 2: Time & Place */}
-        <div className="glass-card p-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center text-sm">📅</span>
+        <div className="glass-panel p-6 sm:p-8 rounded-3xl relative overflow-hidden group">
+          <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-secondary/5 rounded-full blur-3xl pointer-events-none transition-all duration-700 group-hover:bg-secondary/10"></div>
+          
+          <h2 className="font-headline-md text-secondary mb-6 flex items-center gap-3">
+            <span className="material-symbols-outlined p-2 bg-secondary/10 rounded-xl">calendar_clock</span>
             Time & Place
           </h2>
           
-          <div className="grid sm:grid-cols-2 gap-4">
-            {/* Date */}
-            <div>
-              <label htmlFor="date" className="block text-sm font-medium mb-1.5">
-                Date <span className="text-danger">*</span>
-              </label>
-              <input
-                id="date"
-                name="date"
-                type="date"
-                required
-                min={new Date().toISOString().split("T")[0]}
-                className={`input-field bg-surface ${state.errors?.date ? "border-danger" : ""}`}
-              />
-              {state.errors?.date && (
-                <p className="text-danger text-xs mt-1">{state.errors.date[0]}</p>
-              )}
-            </div>
-
-            {/* Time */}
-            <div>
-              <label htmlFor="time" className="block text-sm font-medium mb-1.5">
-                Time <span className="text-danger">*</span>
-              </label>
-              <input
-                id="time"
-                name="time"
-                type="time"
-                required
-                className={`input-field bg-surface ${state.errors?.time ? "border-danger" : ""}`}
-              />
-              {state.errors?.time && (
-                <p className="text-danger text-xs mt-1">{state.errors.time[0]}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Location */}
-          <div className="mt-4 space-y-4">
-            <div>
-              <label htmlFor="location" className="block text-sm font-medium mb-1.5">
-                Venue Name / Address <span className="text-danger">*</span>
-              </label>
-              <div className="flex gap-2 items-start">
-                <div className="flex-1">
+          <div className="space-y-6 relative z-10">
+            <div className="grid sm:grid-cols-2 gap-6">
+              {/* Date */}
+              <div>
+                <label htmlFor="date" className="block font-label-md text-on-surface-variant mb-2">
+                  Date <span className="text-error">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline-variant pointer-events-none">calendar_month</span>
                   <input
-                    id="location"
-                    name="location"
-                    type="text"
+                    id="date"
+                    name="date"
+                    type="date"
                     required
-                    ref={locationRef}
-                    className={`input-field ${state.errors?.location ? "border-danger" : ""}`}
-                    placeholder="e.g., Central Park, Court 2"
+                    min={minDateStr}
+                    className={`w-full bg-surface-container-lowest/50 border ${state.errors?.date ? "border-error focus:border-error" : "border-outline-variant/30 focus:border-secondary focus:ring-secondary/20"} rounded-xl pl-12 pr-4 py-4 text-on-surface focus:outline-none focus:ring-4 transition-all color-scheme-dark`}
+                    style={{ colorScheme: "dark" }}
                   />
-                  {state.errors?.location && (
-                    <p className="text-danger text-xs mt-1">{state.errors.location[0]}</p>
-                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={handleGetCoordinates}
-                  disabled={isGeocoding}
-                  className="btn-secondary whitespace-nowrap text-sm py-2.5 px-4 h-11 disabled:opacity-50"
-                  title="Search Map"
-                >
-                  {isGeocoding ? "Searching..." : "🔍 Search Map"}
-                </button>
+                {state.errors?.date && (
+                  <p className="text-error text-xs mt-2 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">error</span> {state.errors.date[0]}</p>
+                )}
               </div>
-              {geocodeError && <p className="text-warning text-xs mt-1">{geocodeError}</p>}
+
+              {/* Time */}
+              <div>
+                <label htmlFor="time" className="block font-label-md text-on-surface-variant mb-2">
+                  Time <span className="text-error">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline-variant pointer-events-none">schedule</span>
+                  <input
+                    id="time"
+                    name="time"
+                    type="time"
+                    required
+                    className={`w-full bg-surface-container-lowest/50 border ${state.errors?.time ? "border-error focus:border-error" : "border-outline-variant/30 focus:border-secondary focus:ring-secondary/20"} rounded-xl pl-12 pr-4 py-4 text-on-surface focus:outline-none focus:ring-4 transition-all color-scheme-dark`}
+                    style={{ colorScheme: "dark" }}
+                  />
+                </div>
+                {state.errors?.time && (
+                  <p className="text-error text-xs mt-2 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">error</span> {state.errors.time[0]}</p>
+                )}
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1.5">
-                Pinpoint on Map (Optional but recommended)
-              </label>
-              <p className="text-xs text-muted mb-2">Click on the map to drop a pin. This helps players navigate exactly to your match!</p>
-              <LocationPickerMap 
-                onLocationSelect={(newLat, newLng) => {
-                  setLat(newLat);
-                  setLng(newLng);
-                  setGeocodeError("");
-                }} 
-                defaultLat={lat || undefined} 
-                defaultLng={lng || undefined} 
-              />
-              {lat && lng && !geocodeError && (
-                <p className="text-success text-xs mt-2">📍 Coordinates selected successfully!</p>
-              )}
+            {/* Location */}
+            <div className="space-y-4 pt-2">
+              <div>
+                <label htmlFor="location" className="block font-label-md text-on-surface-variant mb-2">
+                  Venue Name / Address <span className="text-error">*</span>
+                </label>
+                <div className="flex gap-3 items-start flex-col sm:flex-row">
+                  <div className="flex-1 w-full relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline-variant pointer-events-none">location_on</span>
+                    <input
+                      id="location"
+                      name="location"
+                      type="text"
+                      required
+                      ref={locationRef}
+                      className={`w-full bg-surface-container-lowest/50 border ${state.errors?.location ? "border-error focus:border-error" : "border-outline-variant/30 focus:border-secondary focus:ring-secondary/20"} rounded-xl pl-12 pr-4 py-4 text-on-surface focus:outline-none focus:ring-4 transition-all placeholder:text-outline-variant`}
+                      placeholder="e.g., Central Park, Court 2"
+                    />
+                    {state.errors?.location && (
+                      <p className="text-error text-xs mt-2 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">error</span> {state.errors.location[0]}</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleGetCoordinates}
+                    disabled={isGeocoding}
+                    className="bg-secondary/10 text-secondary border border-secondary/30 hover:bg-secondary/20 hover:border-secondary/50 transition-all font-label-md px-6 py-4 rounded-xl flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 w-full sm:w-auto"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {isGeocoding ? "hourglass_empty" : "search"}
+                    </span>
+                    {isGeocoding ? "Searching..." : "Find on Map"}
+                  </button>
+                </div>
+                {geocodeError && <p className="text-warning text-xs mt-2 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">warning</span> {geocodeError}</p>}
+              </div>
+
+              <div className="bg-surface-container-low/50 border border-outline-variant/20 rounded-2xl p-4 mt-4">
+                <label className="block font-label-md text-on-surface mb-1 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-secondary text-[18px]">pin_drop</span>
+                  Pinpoint on Map
+                </label>
+                <p className="text-xs text-on-surface-variant mb-4">Click on the map to drop a precise pin. This helps players navigate exactly to your match!</p>
+                <div className="rounded-xl overflow-hidden border border-outline-variant/20 shadow-inner">
+                  <LocationPickerMap 
+                    onLocationSelect={(newLat, newLng) => {
+                      setLat(newLat);
+                      setLng(newLng);
+                      setGeocodeError("");
+                    }} 
+                    defaultLat={lat || undefined} 
+                    defaultLng={lng || undefined} 
+                  />
+                </div>
+                {lat && lng && !geocodeError && (
+                  <p className="text-secondary text-xs mt-3 flex items-center gap-1 bg-secondary/10 w-fit px-3 py-1.5 rounded-lg border border-secondary/20">
+                    <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                    Coordinates selected successfully!
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Section 3: Requirements */}
-        <div className="glass-card p-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center text-sm">👥</span>
+        <div className="glass-panel p-6 sm:p-8 rounded-3xl relative overflow-hidden group">
+          <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-tertiary/5 rounded-full blur-3xl pointer-events-none transition-all duration-700 group-hover:bg-tertiary/10"></div>
+          
+          <h2 className="font-headline-md text-tertiary mb-6 flex items-center gap-3">
+            <span className="material-symbols-outlined p-2 bg-tertiary/10 rounded-xl">groups</span>
             Requirements
           </h2>
           
-          <div className="grid sm:grid-cols-2 gap-4">
-            {/* Players Needed */}
-            <div>
-              <label htmlFor="playersNeeded" className="block text-sm font-medium mb-1.5">
-                Players Needed <span className="text-danger">*</span>
-              </label>
-              <input
-                id="playersNeeded"
-                name="playersNeeded"
-                type="number"
-                min="1"
-                max="50"
-                required
-                defaultValue={1}
-                className={`input-field ${state.errors?.playersNeeded ? "border-danger" : ""}`}
-              />
-              {state.errors?.playersNeeded && (
-                <p className="text-danger text-xs mt-1">{state.errors.playersNeeded[0]}</p>
-              )}
+          <div className="space-y-6 relative z-10">
+            <div className="grid sm:grid-cols-2 gap-6">
+              {/* Players Needed */}
+              <div>
+                <label htmlFor="playersNeeded" className="block font-label-md text-on-surface-variant mb-2">
+                  Players Needed <span className="text-error">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline-variant pointer-events-none">person_add</span>
+                  <input
+                    id="playersNeeded"
+                    name="playersNeeded"
+                    type="number"
+                    min="1"
+                    max="50"
+                    required
+                    defaultValue={1}
+                    className={`w-full bg-surface-container-lowest/50 border ${state.errors?.playersNeeded ? "border-error focus:border-error" : "border-outline-variant/30 focus:border-tertiary focus:ring-tertiary/20"} rounded-xl pl-12 pr-4 py-4 text-on-surface focus:outline-none focus:ring-4 transition-all`}
+                  />
+                </div>
+                {state.errors?.playersNeeded && (
+                  <p className="text-error text-xs mt-2 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">error</span> {state.errors.playersNeeded[0]}</p>
+                )}
+              </div>
+
+              {/* Cost Per Player */}
+              <div>
+                <label htmlFor="costPerPlayer" className="block font-label-md text-on-surface-variant mb-2">
+                  Cost Per Player (₹)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-outline-variant font-bold pointer-events-none">₹</span>
+                  <input
+                    id="costPerPlayer"
+                    name="costPerPlayer"
+                    type="number"
+                    min="0"
+                    defaultValue={0}
+                    className={`w-full bg-surface-container-lowest/50 border ${state.errors?.costPerPlayer ? "border-error focus:border-error" : "border-outline-variant/30 focus:border-tertiary focus:ring-tertiary/20"} rounded-xl pl-12 pr-4 py-4 text-on-surface focus:outline-none focus:ring-4 transition-all`}
+                    placeholder="0 for free"
+                  />
+                </div>
+                {state.errors?.costPerPlayer && (
+                  <p className="text-error text-xs mt-2 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">error</span> {state.errors.costPerPlayer[0]}</p>
+                )}
+              </div>
             </div>
 
-            {/* Cost Per Player */}
-            <div>
-              <label htmlFor="costPerPlayer" className="block text-sm font-medium mb-1.5">
-                Cost Per Player (₹)
+            {/* Skill Level */}
+            <div className="pt-2">
+              <label className="block font-label-md text-on-surface-variant mb-3">
+                Required Skill Level
               </label>
-              <input
-                id="costPerPlayer"
-                name="costPerPlayer"
-                type="number"
-                min="0"
-                defaultValue={0}
-                className={`input-field ${state.errors?.costPerPlayer ? "border-danger" : ""}`}
-                placeholder="0 for free"
-              />
-              {state.errors?.costPerPlayer && (
-                <p className="text-danger text-xs mt-1">{state.errors.costPerPlayer[0]}</p>
-              )}
+              <div className="grid grid-cols-2 gap-3">
+                {SKILL_LEVELS.map((level) => (
+                  <button
+                    key={level.id}
+                    type="button"
+                    onClick={() => setSelectedSkill(level.id)}
+                    className={`p-4 rounded-2xl border text-left transition-all duration-300 ${
+                      selectedSkill === level.id
+                        ? "bg-tertiary/15 border-tertiary shadow-[0_0_15px_rgba(200,26,66,0.15)] -translate-y-1"
+                        : "bg-surface-container-high/50 border-outline-variant/20 hover:bg-surface-bright hover:-translate-y-1"
+                    }`}
+                  >
+                    <p className={`font-label-md mb-1 ${selectedSkill === level.id ? "text-tertiary" : "text-on-surface"}`}>
+                      {level.label}
+                    </p>
+                    <p className="text-xs text-on-surface-variant">{level.desc}</p>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-
-          {/* Skill Level */}
-          <div className="mt-4">
-            <label htmlFor="skillLevelRequired" className="block text-sm font-medium mb-1.5">
-              Required Skill Level
-            </label>
-            <select
-              id="skillLevelRequired"
-              name="skillLevelRequired"
-              className="input-field bg-surface text-foreground appearance-none"
-              defaultValue="any"
-            >
-              {SKILL_LEVELS.map((level) => (
-                <option key={level.id} value={level.id}>
-                  {level.label} - {level.desc}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
 
-        {/* Submit */}
-        <div className="flex items-center gap-3 justify-end">
-          <Link href="/matches" className="btn-ghost text-sm py-2.5 px-5">
+        {/* Submit Action */}
+        <div className="flex flex-col sm:flex-row items-center gap-4 justify-end pt-4">
+          <Link href="/matches" className="w-full sm:w-auto px-8 py-4 font-label-md text-outline hover:text-on-surface hover:bg-surface-container-highest rounded-xl transition-colors text-center">
             Cancel
           </Link>
           <button
             type="submit"
             disabled={isPending}
-            className="btn-primary text-sm py-2.5 px-8 disabled:opacity-60 disabled:cursor-not-allowed"
-            id="create-match-btn"
+            className="w-full sm:w-auto bg-primary text-on-primary hover:bg-primary-fixed shadow-[0_0_20px_rgba(124,58,237,0.3)] hover:shadow-[0_0_30px_rgba(124,58,237,0.5)] transition-all font-headline-md uppercase px-10 py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isPending ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+              <>
+                <span className="material-symbols-outlined animate-spin text-[20px]">sync</span>
                 Creating...
-              </div>
+              </>
             ) : (
-              "Create Match"
+              <>
+                <span className="material-symbols-outlined text-[20px]">add_circle</span>
+                Create Match
+              </>
             )}
           </button>
         </div>
